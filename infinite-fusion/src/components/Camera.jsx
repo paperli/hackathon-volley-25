@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-const BACKEND_URL = 'https://monkfish-rational-osprey.ngrok-free.appanalyze'; // Change to ngrok URL if needed
+const BACKEND_URL = 'http://localhost:4000/analyze'; // Change to ngrok URL if needed
 
 const Camera = ({ onCapture }) => {
   const videoRef = useRef(null);
