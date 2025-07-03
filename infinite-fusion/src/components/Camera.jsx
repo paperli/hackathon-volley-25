@@ -3,6 +3,7 @@ import { useGame } from '../game/GameContext';
 import { useNavigate } from 'react-router-dom';
 
 const BACKEND_URL = 'http://localhost:4000/analyze'; // Change to ngrok URL if needed
+const TASK_GEN_URL = 'http://localhost:4000/generate-task'; // New endpoint for task generation
 
 const Camera = ({ onCapture }) => {
   const videoRef = useRef(null);
@@ -12,8 +13,11 @@ const Camera = ({ onCapture }) => {
   const [captured, setCaptured] = useState(null);
   const [objects, setObjects] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [taskError, setTaskError] = useState(null);
+  const [generatedTask, setGeneratedTask] = useState(null);
 
-  const { addObject } = useGame();
+  const { addObject, setTasks } = useGame();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -74,8 +78,9 @@ const Camera = ({ onCapture }) => {
     }
   };
 
-  const handleStartGame = () => {
-    if (objects && objects.length > 0) {
+  const handleStartGame = async () => {
+    if (objects && objects.length > 1) {
+      // Add detected objects to inventory
       objects.forEach(obj => {
         addObject({
           id: obj.name,
@@ -83,7 +88,28 @@ const Camera = ({ onCapture }) => {
           source: 'detected',
         });
       });
-      navigate('/game');
+      setTaskLoading(true);
+      setTaskError(null);
+      setGeneratedTask(null);
+      try {
+        const response = await fetch(TASK_GEN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ objects: objects.map(obj => obj.name) }),
+        });
+        const result = await response.json();
+        if (result.task) {
+          setTasks([result.task]);
+          setGeneratedTask(result.task);
+          navigate('/game');
+        } else {
+          setTaskError(result.error || 'Failed to generate task.');
+        }
+      } catch (err) {
+        setTaskError('Failed to generate task.');
+      } finally {
+        setTaskLoading(false);
+      }
     }
   };
 
@@ -131,10 +157,11 @@ const Camera = ({ onCapture }) => {
               <button
                 onClick={handleStartGame}
                 style={{ marginTop: 16, padding: '0.5rem 1.5rem', fontSize: '1rem' }}
-                disabled={loading}
+                disabled={loading || taskLoading}
               >
-                Start Game
+                {taskLoading ? 'Generating Task...' : 'Start Game'}
               </button>
+              {taskError && <p style={{ color: 'red' }}>{taskError}</p>}
             </>
           )}
         </div>

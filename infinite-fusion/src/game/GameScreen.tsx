@@ -3,7 +3,7 @@ import { useGame } from "./GameContext";
 
 function GameScreen() {
   const { state, forgeObjects, completeTask, resetGame } = useGame();
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const handleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -46,9 +46,12 @@ function GameScreen() {
       {currentTask ? (
         <div>
           <p>{currentTask.description}</p>
+          {currentTask.solutionHint && (
+            <p style={{ color: '#888', fontStyle: 'italic', marginTop: -12, marginBottom: 12 }}>
+              {currentTask.solutionHint}
+            </p>
+          )}
           <p>
-            Requirements: {currentTask.requirements.join(", ")}
-            <br />
             Status: {currentTask.solved ? "Solved" : "Unsolved"}
           </p>
           <button

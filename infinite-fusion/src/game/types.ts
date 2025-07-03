@@ -10,6 +10,7 @@ export type GameTask = {
   description: string;
   requirements: string[]; // object ids required to solve
   solved: boolean;
+  solutionHint?: string; // debug hint for solution
 };
 
 export type GameState = {

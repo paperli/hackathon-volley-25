@@ -8,6 +8,7 @@ interface GameContextType {
   forgeObjects: (ids: string[]) => void;
   completeTask: () => void;
   resetGame: () => void;
+  setTasks: (tasks: GameTask[]) => void;
 }
 
 const initialObjects: GameObject[] = [
@@ -86,9 +87,14 @@ export const GameProvider = ({ children }: { children: any }) => {
   // Reset the game to initial state
   const resetGame = () => setState(initialState);
 
+  // Set the list of tasks (for dynamic task generation)
+  const setTasks = (tasks: GameTask[]) => {
+    setState((prev) => ({ ...prev, tasks, currentTaskIndex: 0 }));
+  };
+
   return (
     <GameContext.Provider
-      value={{ state, addObject, forgeObjects, completeTask, resetGame }}
+      value={{ state, addObject, forgeObjects, completeTask, resetGame, setTasks }}
     >
       {children}
     </GameContext.Provider>
