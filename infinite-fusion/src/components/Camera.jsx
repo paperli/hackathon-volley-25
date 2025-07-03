@@ -1,11 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 
+const BACKEND_URL = 'https://monkfish-rational-osprey.ngrok-free.appanalyze'; // Change to ngrok URL if needed
+
 const Camera = ({ onCapture }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [error, setError] = useState(null);
   const [streaming, setStreaming] = useState(false);
   const [captured, setCaptured] = useState(null);
+  const [objects, setObjects] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const getCamera = async () => {
@@ -34,7 +38,7 @@ const Camera = ({ onCapture }) => {
     };
   }, []);
 
-  const handleCapture = () => {
+  const handleCapture = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (video && canvas) {
@@ -44,8 +48,24 @@ const Camera = ({ onCapture }) => {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/png');
       setCaptured(dataUrl);
+      setObjects(null);
+      setLoading(true);
+      try {
+        const response = await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: dataUrl }),
+        });
+        const result = await response.json();
+        setObjects(result.objects || []);
+      } catch {
+        setError('Failed to analyze image.');
+        setObjects(null);
+      } finally {
+        setLoading(false);
+      }
       if (onCapture) onCapture(dataUrl);
-      console.log('Image captured.');
+      console.log('Image captured and sent to backend.');
     }
   };
 
@@ -65,8 +85,8 @@ const Camera = ({ onCapture }) => {
       </div>
       {streaming && (
         <div style={{ margin: '1rem 0' }}>
-          <button onClick={handleCapture} style={{ padding: '0.5rem 1.5rem', fontSize: '1rem' }}>
-            Capture
+          <button onClick={handleCapture} style={{ padding: '0.5rem 1.5rem', fontSize: '1rem' }} disabled={loading}>
+            {loading ? 'Analyzing...' : 'Capture'}
           </button>
         </div>
       )}
@@ -74,6 +94,22 @@ const Camera = ({ onCapture }) => {
         <div>
           <h3>Captured Image:</h3>
           <img src={captured} alt="Captured" style={{ maxWidth: 300, borderRadius: 8 }} />
+        </div>
+      )}
+      {objects && (
+        <div style={{ marginTop: 24 }}>
+          <h3>Detected Objects:</h3>
+          {objects.length === 0 ? (
+            <p>No objects detected.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {objects.map((obj, idx) => (
+                <li key={idx} style={{ margin: '0.5rem 0' }}>
+                  <strong>{obj.name}</strong> (Confidence: {(obj.confidence * 100).toFixed(1)}%)
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
       <p style={{ color: '#888', marginTop: 16 }}>If you see no video and no error, check browser permissions and try a different browser.</p>
