@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useGame } from '../game/GameContext';
+import { useNavigate } from 'react-router-dom';
 
 const BACKEND_URL = 'http://localhost:4000/analyze'; // Change to ngrok URL if needed
 
@@ -10,6 +12,9 @@ const Camera = ({ onCapture }) => {
   const [captured, setCaptured] = useState(null);
   const [objects, setObjects] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const { addObject } = useGame();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const getCamera = async () => {
@@ -69,6 +74,19 @@ const Camera = ({ onCapture }) => {
     }
   };
 
+  const handleStartGame = () => {
+    if (objects && objects.length > 0) {
+      objects.forEach(obj => {
+        addObject({
+          id: obj.name,
+          name: obj.name,
+          source: 'detected',
+        });
+      });
+      navigate('/game');
+    }
+  };
+
   return (
     <div style={{ textAlign: 'center' }}>
       <h2>Camera</h2>
@@ -102,13 +120,22 @@ const Camera = ({ onCapture }) => {
           {objects.length === 0 ? (
             <p>No objects detected.</p>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {objects.map((obj, idx) => (
-                <li key={idx} style={{ margin: '0.5rem 0' }}>
-                  <strong>{obj.name}</strong> (Confidence: {(obj.confidence * 100).toFixed(1)}%)
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {objects.map((obj, idx) => (
+                  <li key={idx} style={{ margin: '0.5rem 0' }}>
+                    <strong>{obj.name}</strong> (Confidence: {(obj.confidence * 100).toFixed(1)}%)
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={handleStartGame}
+                style={{ marginTop: 16, padding: '0.5rem 1.5rem', fontSize: '1rem' }}
+                disabled={loading}
+              >
+                Start Game
+              </button>
+            </>
           )}
         </div>
       )}
