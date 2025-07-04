@@ -2,17 +2,22 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useGame } from '../game/GameContext';
 import { useNavigate } from 'react-router-dom';
 
-const BACKEND_URL = 'http://localhost:4000/analyze'; // Change to ngrok URL if needed
-const TASK_GEN_URL = 'http://localhost:4000/generate-task'; // New endpoint for task generation
+const BACKEND_URL = 'http://192.168.50.38:4000/analyze'; // Change to ngrok URL if needed
+const TASK_GEN_URL = 'http://192.168.50.38:4000/generate-task'; // New endpoint for task generation
+
+const NUM_CAPTURES = 4;
 
 const Camera = ({ onCapture }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [error, setError] = useState(null);
   const [streaming, setStreaming] = useState(false);
-  const [captured, setCaptured] = useState(null);
-  const [objects, setObjects] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [captures, setCaptures] = useState([]); // { image }
+  const [analyzedCaptures, setAnalyzedCaptures] = useState([]); // { image, objects }
+  const [currentStep, setCurrentStep] = useState(0); // 0-based index
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeProgress, setAnalyzeProgress] = useState(0);
+  const [loading, setLoading] = useState(false); // for capture only
   const [taskLoading, setTaskLoading] = useState(false);
   const [taskError, setTaskError] = useState(null);
   const [generatedTask, setGeneratedTask] = useState(null);
@@ -56,32 +61,61 @@ const Camera = ({ onCapture }) => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/png');
-      setCaptured(dataUrl);
-      setObjects(null);
-      setLoading(true);
-      try {
-        const response = await fetch(BACKEND_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: dataUrl }),
-        });
-        const result = await response.json();
-        setObjects(result.objects || []);
-      } catch {
-        setError('Failed to analyze image.');
-        setObjects(null);
-      } finally {
-        setLoading(false);
-      }
+      setCaptures(prev => [...prev, { image: dataUrl }]);
+      setCurrentStep(prev => prev + 1);
       if (onCapture) onCapture(dataUrl);
-      console.log('Image captured and sent to backend.');
     }
   };
 
+  const handleRetake = () => {
+    setCaptures([]);
+    setAnalyzedCaptures([]);
+    setCurrentStep(0);
+    setTaskError(null);
+    setGeneratedTask(null);
+    setAnalyzing(false);
+    setAnalyzeProgress(0);
+  };
+
+  // After all photos are taken, analyze them in parallel
+  useEffect(() => {
+    if (currentStep === NUM_CAPTURES && captures.length === NUM_CAPTURES) {
+      setAnalyzing(true);
+      setAnalyzeProgress(0);
+      setAnalyzedCaptures([]);
+      Promise.all(
+        captures.map(async (c, idx) => {
+          try {
+            const response = await fetch(BACKEND_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: c.image }),
+            });
+            const result = await response.json();
+            setAnalyzeProgress(p => p + 1);
+            return { image: c.image, objects: result.objects || [] };
+          } catch {
+            setAnalyzeProgress(p => p + 1);
+            return { image: c.image, objects: [] };
+          }
+        })
+      ).then(results => {
+        setAnalyzedCaptures(results);
+        setAnalyzing(false);
+      });
+    }
+  }, [currentStep, captures]);
+
+  // Merge all detected objects (deduplicate by name)
+  const allObjects = Array.from(
+    new Map(
+      analyzedCaptures.flatMap(c => c.objects).map(obj => [obj.name, obj])
+    ).values()
+  );
+
   const handleStartGame = async () => {
-    if (objects && objects.length > 1) {
-      // Add detected objects to inventory
-      objects.forEach(obj => {
+    if (allObjects.length > 1) {
+      allObjects.forEach(obj => {
         addObject({
           id: obj.name,
           name: obj.name,
@@ -95,7 +129,7 @@ const Camera = ({ onCapture }) => {
         const response = await fetch(TASK_GEN_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ objects: objects.map(obj => obj.name) }),
+          body: JSON.stringify({ objects: allObjects.map(obj => obj.name) }),
         });
         const result = await response.json();
         if (result.task) {
@@ -115,8 +149,9 @@ const Camera = ({ onCapture }) => {
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <h2>Camera</h2>
+      <h2>Room Panorama Capture</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      <p>Spin slowly in a circle. We'll ask you to take {NUM_CAPTURES} photos to capture your whole room.</p>
       <div style={{ position: 'relative', display: 'inline-block', background: '#000' }}>
         <video
           ref={videoRef}
@@ -127,28 +162,39 @@ const Camera = ({ onCapture }) => {
         <canvas ref={canvasRef} style={{ display: 'none' }} />
         {!streaming && !error && <p style={{ color: '#888', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>Waiting for camera...</p>}
       </div>
-      {streaming && (
+      {streaming && currentStep < NUM_CAPTURES && (
         <div style={{ margin: '1rem 0' }}>
+          <h3>Photo {currentStep + 1} of {NUM_CAPTURES}</h3>
           <button onClick={handleCapture} style={{ padding: '0.5rem 1.5rem', fontSize: '1rem' }} disabled={loading}>
-            {loading ? 'Analyzing...' : 'Capture'}
+            {loading ? 'Saving...' : 'Capture'}
           </button>
         </div>
       )}
-      {captured && (
-        <div>
-          <h3>Captured Image:</h3>
-          <img src={captured} alt="Captured" style={{ maxWidth: 300, borderRadius: 8 }} />
+      {captures.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <h3>Captured Photos</h3>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {captures.map((c, idx) => (
+              <img key={idx} src={c.image} alt={`Capture ${idx + 1}`} style={{ maxWidth: 80, borderRadius: 4, border: '1px solid #ccc' }} />
+            ))}
+          </div>
         </div>
       )}
-      {objects && (
+      {analyzing && (
         <div style={{ marginTop: 24 }}>
-          <h3>Detected Objects:</h3>
-          {objects.length === 0 ? (
+          <h3>Analyzing Photos...</h3>
+          <p>Analyzing {analyzeProgress} / {NUM_CAPTURES}</p>
+        </div>
+      )}
+      {!analyzing && analyzedCaptures.length === NUM_CAPTURES && (
+        <div style={{ marginTop: 24 }}>
+          <h3>Detected Objects (from all photos):</h3>
+          {allObjects.length === 0 ? (
             <p>No objects detected.</p>
           ) : (
             <>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {objects.map((obj, idx) => (
+                {allObjects.map((obj, idx) => (
                   <li key={idx} style={{ margin: '0.5rem 0' }}>
                     <strong>{obj.name}</strong> (Confidence: {(obj.confidence * 100).toFixed(1)}%)
                   </li>
@@ -157,11 +203,12 @@ const Camera = ({ onCapture }) => {
               <button
                 onClick={handleStartGame}
                 style={{ marginTop: 16, padding: '0.5rem 1.5rem', fontSize: '1rem' }}
-                disabled={loading || taskLoading}
+                disabled={taskLoading}
               >
                 {taskLoading ? 'Generating Task...' : 'Start Game'}
               </button>
               {taskError && <p style={{ color: 'red' }}>{taskError}</p>}
+              <button onClick={handleRetake} style={{ marginLeft: 16 }}>Retake All Photos</button>
             </>
           )}
         </div>
