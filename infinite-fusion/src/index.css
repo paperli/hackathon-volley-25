@@ -1,68 +1,163 @@
+/* Design System Variables */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Colors */
+  --color-bg: #fffbe9;
+  --color-bg-card: #fff6d6;
+  --color-text: #181c20;
+  --color-text-muted: #7a6c4f;
+  --color-primary: #FFC145;
+  --color-primary-hover: #e6a800;
+  --color-accent: #ffb300;
+  --color-border: #ffe1a8;
+  --color-button-bg: #FFC145;
+  --color-button-text: #181c20;
+  --color-button-bg-hover: #e6a800;
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.5rem;
+  --font-size-xl: 2.25rem;
+  --font-size-xxl: 3.2em;
+
+  /* Font Family */
+  --font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+  --space-xl: 4rem;
+
+  /* Border Radius */
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 16px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 8px rgba(255,193,69,0.08);
+  --shadow-card-dark: 0 2px 8px rgba(255,193,69,0.18);
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  font-family: var(--font-family);
+  line-height: 1.5;
+  font-weight: 400;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #181c20;
+    --color-bg-card: #23272f;
+    --color-text: #fffbe9;
+    --color-text-muted: #ffe1a8;
+    --color-primary: #FFC145;
+    --color-primary-hover: #e6a800;
+    --color-accent: #ffe1a8;
+    --color-border: #3a2e1f;
+    --color-button-bg: #FFC145;
+    --color-button-text: #181c20;
+    --color-button-bg-hover: #e6a800;
+  }
+}
+
+/* Reset and base styles */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  text-align: center;
+}
+
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  color: var(--color-primary-hover);
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: var(--font-size-xxl);
   line-height: 1.1;
+}
+h2 {
+  font-size: var(--font-size-xl);
+}
+h3 {
+  font-size: var(--font-size-lg);
 }
 
 button {
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: var(--font-size-md);
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-button-bg);
+  color: var(--color-button-text);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background 0.25s, color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--color-primary-hover);
+  background: var(--color-button-bg-hover);
+  color: var(--color-button-text);
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+.card {
+  padding: var(--space-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    box-shadow: var(--shadow-card-dark);
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+}
+
+.read-the-docs {
+  color: var(--color-text-muted);
+}
+
+.button-secondary {
+  background: var(--color-bg-card);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.button-secondary:hover, .button-secondary:focus {
+  background: var(--color-primary);
+  color: var(--color-button-text);
+  border-color: var(--color-primary-hover);
+}
+@media (prefers-color-scheme: dark) {
+  .button-secondary {
+    background: var(--color-border);
+    color: var(--color-primary);
+    border-color: var(--color-primary-hover);
   }
 }

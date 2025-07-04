@@ -148,46 +148,46 @@ const Camera = ({ onCapture }) => {
   };
 
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: 'center', background: 'var(--color-bg)', color: 'var(--color-text)', minHeight: '100vh' }}>
       <h2>Room Panorama Capture</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--color-accent)' }}>{error}</p>}
       <p>Spin slowly in a circle. We'll ask you to take {NUM_CAPTURES} photos to capture your whole room.</p>
-      <div style={{ position: 'relative', display: 'inline-block', background: '#000' }}>
+      <div style={{ position: 'relative', display: 'inline-block', background: 'var(--color-bg-card)' }} className="card">
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          style={{ width: '100%', maxWidth: 400, borderRadius: 8, background: '#000', minHeight: 200 }}
+          style={{ width: '100%', maxWidth: 400, borderRadius: 'var(--radius)', background: 'var(--color-bg-card)', minHeight: 200 }}
         />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
-        {!streaming && !error && <p style={{ color: '#888', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>Waiting for camera...</p>}
+        {!streaming && !error && <p style={{ color: 'var(--color-text-muted)', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>Waiting for camera...</p>}
       </div>
       {streaming && currentStep < NUM_CAPTURES && (
-        <div style={{ margin: '1rem 0' }}>
+        <div style={{ margin: 'var(--space-md) 0' }}>
           <h3>Photo {currentStep + 1} of {NUM_CAPTURES}</h3>
-          <button onClick={handleCapture} style={{ padding: '0.5rem 1.5rem', fontSize: '1rem' }} disabled={loading}>
+          <button onClick={handleCapture} style={{ padding: '0.5rem 1.5rem', fontSize: 'var(--font-size-md)' }} disabled={loading}>
             {loading ? 'Saving...' : 'Capture'}
           </button>
         </div>
       )}
       {captures.length > 0 && (
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 'var(--space-md)' }}>
           <h3>Captured Photos</h3>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
             {captures.map((c, idx) => (
-              <img key={idx} src={c.image} alt={`Capture ${idx + 1}`} style={{ maxWidth: 80, borderRadius: 4, border: '1px solid #ccc' }} />
+              <img key={idx} src={c.image} alt={`Capture ${idx + 1}`} style={{ maxWidth: 80, borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }} />
             ))}
           </div>
         </div>
       )}
       {analyzing && (
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginTop: 'var(--space-lg)' }}>
           <h3>Analyzing Photos...</h3>
           <p>Analyzing {analyzeProgress} / {NUM_CAPTURES}</p>
         </div>
       )}
       {!analyzing && analyzedCaptures.length === NUM_CAPTURES && (
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginTop: 'var(--space-lg)' }}>
           <h3>Detected Objects (from all photos):</h3>
           {allObjects.length === 0 ? (
             <p>No objects detected.</p>
@@ -202,18 +202,18 @@ const Camera = ({ onCapture }) => {
               </ul>
               <button
                 onClick={handleStartGame}
-                style={{ marginTop: 16, padding: '0.5rem 1.5rem', fontSize: '1rem' }}
+                style={{ marginTop: 'var(--space-md)', padding: '0.5rem 1.5rem', fontSize: 'var(--font-size-md)' }}
                 disabled={taskLoading}
               >
                 {taskLoading ? 'Generating Task...' : 'Start Game'}
               </button>
-              {taskError && <p style={{ color: 'red' }}>{taskError}</p>}
-              <button onClick={handleRetake} style={{ marginLeft: 16 }}>Retake All Photos</button>
+              {taskError && <p style={{ color: 'var(--color-accent)' }}>{taskError}</p>}
+              <button onClick={handleRetake} className="button-secondary" style={{ marginLeft: 'var(--space-md)' }}>Retake All Photos</button>
             </>
           )}
         </div>
       )}
-      <p style={{ color: '#888', marginTop: 16 }}>If you see no video and no error, check browser permissions and try a different browser.</p>
+      <p style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-md)' }}>If you see no video and no error, check browser permissions and try a different browser.</p>
     </div>
   );
 };
