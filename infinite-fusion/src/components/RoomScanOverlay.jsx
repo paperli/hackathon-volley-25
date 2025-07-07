@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
-const BACKEND_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze`;
+const SCAN_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-scan`;
 const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
 const NUM_CAPTURES = 4;
 
@@ -42,7 +42,7 @@ const RoomScanOverlay = () => {
       const results = await Promise.all(
         captures.map(async (c) => {
           try {
-            const response = await fetch(BACKEND_URL, {
+            const response = await fetch(SCAN_URL, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ image: c.image }),

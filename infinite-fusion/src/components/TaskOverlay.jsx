@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
-const BACKEND_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze`;
+const ANSWER_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-answer`;
 
 const TaskOverlay = () => {
   const { videoRef } = useCameraStream();
@@ -12,8 +12,25 @@ const TaskOverlay = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState(null);
   const [forgeError, setForgeError] = useState(null);
+  const [fadeError, setFadeError] = useState(false);
 
   const currentTask = state.tasks[state.currentTaskIndex];
+  const inventoryNames = state.inventory.map(obj => obj.name);
+
+  // Auto-dismiss error toast after 2 seconds, with fade-out in last 400ms
+  useEffect(() => {
+    if (error) {
+      setFadeError(false);
+      const fadeTimer = setTimeout(() => setFadeError(true), 1600);
+      const timer = setTimeout(() => setError(null), 2000);
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(fadeTimer);
+      };
+    } else {
+      setFadeError(false);
+    }
+  }, [error]);
 
   const handleCapture = async () => {
     setError(null);
@@ -27,15 +44,15 @@ const TaskOverlay = () => {
     const dataUrl = canvas.toDataURL("image/png");
     setAnalyzing(true);
     try {
-      const response = await fetch(BACKEND_URL, {
+      const response = await fetch(ANSWER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: dataUrl }),
+        body: JSON.stringify({ image: dataUrl, inventory: inventoryNames }),
       });
       const result = await response.json();
       const detected = (result.objects || [])[0];
       if (!detected) {
-        setError("No object detected. Try again.");
+        setError("Detection failed. No object recognized. Please try again.");
         setAnalyzing(false);
         return;
       }
@@ -94,6 +111,7 @@ const TaskOverlay = () => {
                 <>
                   <img src={captures[0].image} alt="Object 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <button onClick={() => handleRetake(0)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer' }}>×</button>
+                  <div style={{ position: 'absolute', bottom: 2, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 13, padding: '2px 4px', borderRadius: 6, textAlign: 'center' }}>{captures[0].object?.name}</div>
                 </>
               ) : (
                 <span style={{ color: '#fff', opacity: 0.5 }}>1</span>
@@ -107,13 +125,30 @@ const TaskOverlay = () => {
                 <>
                   <img src={captures[1].image} alt="Object 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <button onClick={() => handleRetake(1)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer' }}>×</button>
+                  <div style={{ position: 'absolute', bottom: 2, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 13, padding: '2px 4px', borderRadius: 6, textAlign: 'center' }}>{captures[1].object?.name}</div>
                 </>
               ) : (
                 <span style={{ color: '#fff', opacity: 0.5 }}>2</span>
               )}
             </div>
           </div>
-          {error && <p className="overlay-text" style={{ color: '#ffb300' }}>{error}</p>}
+          {error && <div style={{ position: 'fixed', top: 24, left: 0, right: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+            <div
+              style={{
+                background: '#ff4d4f',
+                color: '#fff',
+                padding: '10px 24px',
+                borderRadius: 8,
+                fontWeight: 500,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                opacity: fadeError ? 0 : 1,
+                transition: 'opacity 400ms',
+                pointerEvents: 'auto',
+              }}
+            >
+              {error}
+            </div>
+          </div>}
           {forgeError && <p className="overlay-text" style={{ color: '#ff4d4f' }}>{forgeError}</p>}
           {analyzing && <p className="overlay-text">Analyzing...</p>}
         </div>

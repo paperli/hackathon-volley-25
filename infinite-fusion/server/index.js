@@ -17,9 +17,9 @@ const getRandomPair = (arr) => {
   return [shuffled[0], shuffled[1]];
 };
 
-// POST /analyze: expects { image: <base64 string> }
+// DEPRECATED: /analyze (use /analyze-scan or /analyze-answer)
 app.post('/analyze', async (req, res) => {
-  const { image } = req.body;
+  const { image, inventory } = req.body;
   if (!image) {
     return res.status(400).json({ error: 'No image provided' });
   }
@@ -31,7 +31,12 @@ app.post('/analyze', async (req, res) => {
 
   try {
     // Prepare the prompt for object detection
-    const prompt = `List all MOVABLE objects you see in this image. For each object, provide a short name and a confidence score from 0 to 1. Return the result as a JSON array of objects with 'name' and 'confidence' fields. Only include objects that a person could reasonably pick up and move.`;
+    let prompt;
+    if (Array.isArray(inventory) && inventory.length > 0) {
+      prompt = `You are an object recognition assistant for a scavenger hunt game.\nGiven an image and a list of inventory objects, your task is to:\n- Identify if any object from the inventory is present in the image. If so, return the name of that object.\n- If none of the inventory objects are present, return the name of the most prominent movable object in the image.\n- Return only one object name per image.\nInventory: ${JSON.stringify(inventory)}\nRespond with a JSON object: {\"name\": <object name>, \"confidence\": <score 0-1>}`;
+    } else {
+      prompt = `List all MOVABLE objects you see in this image. For each object, provide a short name and a confidence score from 0 to 1. Return the result as a JSON array of objects with 'name' and 'confidence' fields. Only include objects that a person could reasonably pick up and move.`;
+    }
 
     // Call OpenAI Vision API (GPT-4 Turbo with vision)
     const response = await openai.chat.completions.create({
@@ -52,7 +57,68 @@ app.post('/analyze', async (req, res) => {
     const text = response.choices[0]?.message?.content;
     let objects = [];
     try {
-      // Try to extract the JSON array from the response
+      if (Array.isArray(inventory) && inventory.length > 0) {
+        // Expect a single object in JSON: { name, confidence }
+        const match = text.match(/\{.*\}/s);
+        if (match) {
+          const obj = JSON.parse(match[0]);
+          if (obj && obj.name) {
+            objects = [obj];
+          } else {
+            objects = [];
+          }
+        } else {
+          objects = [];
+        }
+      } else {
+        // Try to extract the JSON array from the response
+        const match = text.match(/\[.*\]/s);
+        if (match) {
+          objects = JSON.parse(match[0]);
+        } else {
+          objects = [];
+        }
+      }
+    } catch (err) {
+      console.error('Failed to parse OpenAI response:', err, text);
+      objects = [];
+    }
+
+    res.json({ objects, message: 'OpenAI Vision API result.' });
+  } catch (err) {
+    console.error('OpenAI Vision API error:', err);
+    res.status(500).json({ error: 'Failed to analyze image with OpenAI Vision API.' });
+  }
+});
+
+// POST /analyze-scan: expects { image }
+app.post('/analyze-scan', async (req, res) => {
+  const { image } = req.body;
+  if (!image) {
+    return res.status(400).json({ error: 'No image provided' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  try {
+    const prompt = `List all MOVABLE objects you see in this image. For each object, provide a short name and a confidence score from 0 to 1. Return the result as a JSON array of objects with 'name' and 'confidence' fields. Only include objects that a person could reasonably pick up and move.`;
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: image } },
+          ],
+        },
+      ],
+      max_tokens: 500,
+    });
+    const text = response.choices[0]?.message?.content;
+    let objects = [];
+    try {
       const match = text.match(/\[.*\]/s);
       if (match) {
         objects = JSON.parse(match[0]);
@@ -63,10 +129,59 @@ app.post('/analyze', async (req, res) => {
       console.error('Failed to parse OpenAI response:', err, text);
       objects = [];
     }
-
-    res.json({ objects, message: 'OpenAI Vision API result.' });
+    res.json({ objects, message: 'OpenAI Vision API result (scan).' });
   } catch (err) {
-    console.error('OpenAI Vision API error:', err);
+    console.error('OpenAI Vision API error (scan):', err);
+    res.status(500).json({ error: 'Failed to analyze image with OpenAI Vision API.' });
+  }
+});
+
+// POST /analyze-answer: expects { image, inventory }
+app.post('/analyze-answer', async (req, res) => {
+  const { image, inventory } = req.body;
+  if (!image || !Array.isArray(inventory) || inventory.length === 0) {
+    return res.status(400).json({ error: 'Image and inventory are required' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  try {
+    const prompt = `You are an object recognition assistant for a scavenger hunt game.\nGiven an image and a list of inventory objects, your task is to:\n- Identify if any object from the inventory is present in the image. If so, return the name of that object.\n- If none of the inventory objects are present, return the name of the most prominent movable object in the image.\n- Return only one object name per image.\nInventory: ${JSON.stringify(inventory)}\nRespond with a JSON object: {\"name\": <object name>, \"confidence\": <score 0-1>}`;
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: image } },
+          ],
+        },
+      ],
+      max_tokens: 500,
+    });
+    const text = response.choices[0]?.message?.content;
+    let objects = [];
+    try {
+      const match = text.match(/\{.*\}/s);
+      if (match) {
+        const obj = JSON.parse(match[0]);
+        if (obj && obj.name) {
+          objects = [obj];
+        } else {
+          objects = [];
+        }
+      } else {
+        objects = [];
+      }
+    } catch (err) {
+      console.error('Failed to parse OpenAI response (answer):', err, text);
+      objects = [];
+    }
+    res.json({ objects, message: 'OpenAI Vision API result (answer).' });
+  } catch (err) {
+    console.error('OpenAI Vision API error (answer):', err);
     res.status(500).json({ error: 'Failed to analyze image with OpenAI Vision API.' });
   }
 });
