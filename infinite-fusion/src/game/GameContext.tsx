@@ -3,7 +3,17 @@ import { GameObject, GameTask, GameState } from "./types";
 
 // Define the context value type
 interface GameContextType {
-  state: GameState;
+  state: GameState & {
+    roomScanImages: string[];
+    gamePhase: "rules" | "scan" | "task" | "end";
+    startTime?: number;
+    endTime?: number;
+  };
+  setRoomScanImages: (images: string[]) => void;
+  setInventory: (objects: GameObject[]) => void;
+  setGamePhase: (phase: "rules" | "scan" | "task" | "end") => void;
+  setStartTime: (t: number) => void;
+  setEndTime: (t: number) => void;
   addObject: (obj: GameObject) => void;
   forgeObjects: (ids: string[]) => void;
   completeTask: () => void;
@@ -11,30 +21,48 @@ interface GameContextType {
   setTasks: (tasks: GameTask[]) => void;
 }
 
-const initialObjects: GameObject[] = [
-  { id: "chair", name: "Chair", source: "detected" },
-  { id: "table", name: "Table", source: "detected" },
-];
+const initialObjects: GameObject[] = [];
+const initialTasks: GameTask[] = [];
 
-const initialTasks: GameTask[] = [
-  {
-    id: "task-1",
-    description: "Forge a new object using a chair and a table.",
-    requirements: ["fused-chair-table"],
-    solved: false,
-  },
-];
-
-const initialState: GameState = {
+const initialState: GameState & {
+  roomScanImages: string[];
+  gamePhase: "rules" | "scan" | "task" | "end";
+  startTime?: number;
+  endTime?: number;
+} = {
   inventory: initialObjects,
   tasks: initialTasks,
   currentTaskIndex: 0,
+  roomScanImages: [],
+  gamePhase: "rules",
+  startTime: undefined,
+  endTime: undefined,
 };
 
 const GameContext = createContext(undefined as unknown as GameContextType | undefined);
 
 export const GameProvider = ({ children }: { children: any }) => {
   const [state, setState] = useState(initialState);
+
+  const setRoomScanImages = (images: string[]) => {
+    setState((prev) => ({ ...prev, roomScanImages: images }));
+  };
+
+  const setInventory = (objects: GameObject[]) => {
+    setState((prev) => ({ ...prev, inventory: objects }));
+  };
+
+  const setGamePhase = (phase: "rules" | "scan" | "task" | "end") => {
+    setState((prev) => ({ ...prev, gamePhase: phase }));
+  };
+
+  const setStartTime = (t: number) => {
+    setState((prev) => ({ ...prev, startTime: t }));
+  };
+
+  const setEndTime = (t: number) => {
+    setState((prev) => ({ ...prev, endTime: t }));
+  };
 
   // Add a new object to inventory (if not already present)
   const addObject = (obj: GameObject) => {
@@ -94,7 +122,19 @@ export const GameProvider = ({ children }: { children: any }) => {
 
   return (
     <GameContext.Provider
-      value={{ state, addObject, forgeObjects, completeTask, resetGame, setTasks }}
+      value={{
+        state,
+        setRoomScanImages,
+        setInventory,
+        setGamePhase,
+        setStartTime,
+        setEndTime,
+        addObject,
+        forgeObjects,
+        completeTask,
+        resetGame,
+        setTasks,
+      }}
     >
       {children}
     </GameContext.Provider>
