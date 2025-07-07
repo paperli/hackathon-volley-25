@@ -161,3 +161,80 @@ button:focus-visible {
     border-color: var(--color-primary-hover);
   }
 }
+
+/* Overlay helpers */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.overlay-content {
+  position: absolute;
+  width: 100vw;
+  pointer-events: auto;
+}
+.overlay-bottom {
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: var(--space-lg);
+  width: 100vw;
+}
+.overlay-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Overlay text readability */
+.overlay-text, .overlay h1, .overlay h2, .overlay h3, .overlay p, .overlay label {
+  color: #fff !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+}
+
+/* Camera-style circular capture button */
+.capture-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.95);
+  border: 4px solid #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  outline: none;
+  font-size: 2rem;
+  color: #181c20;
+  margin: 0 16px;
+}
+.capture-btn:active {
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+
+/* For icon inside the button */
+.capture-btn svg {
+  width: 36px;
+  height: 36px;
+  color: #181c20;
+}
+
+/* Overlay card for modals */
+.overlay-card {
+  background: rgba(24,28,32,0.85);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  padding: var(--space-lg);
+  color: #fff;
+  max-width: 90vw;
+  margin: 0 auto;
+}

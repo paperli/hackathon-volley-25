@@ -2,8 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useGame } from '../game/GameContext';
 import { useNavigate } from 'react-router-dom';
 
-const BACKEND_URL = 'http://192.168.50.38:4000/analyze'; // Change to ngrok URL if needed
-const TASK_GEN_URL = 'http://192.168.50.38:4000/generate-task'; // New endpoint for task generation
+const BACKEND_URL = 'http://192.168.20.41:4000/analyze'; // Change to ngrok URL if needed
+const TASK_GEN_URL = 'http://192.168.20.41:4000/generate-task'; // New endpoint for task generation
 
 const NUM_CAPTURES = 4;
 
