@@ -45,8 +45,8 @@ const RoomScanOverlay = () => {
     setCaptures((prev) => [...prev, { image: dataUrl }]);
   };
 
-  const handleRetake = () => {
-    setCaptures([]);
+  const handleRemoveCapture = (idx) => {
+    setCaptures((prev) => prev.filter((_, i) => i !== idx));
     setError(null);
     setAnalyzing(false);
     setAnalyzeProgress(0);
@@ -128,9 +128,12 @@ const RoomScanOverlay = () => {
           <p className="overlay-text">Take 4 photos around you to detect movable objects in your space.</p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center", margin: "16px 0" }}>
             {[...Array(NUM_CAPTURES)].map((_, idx) => (
-              <div key={idx} style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(255,255,255,0.12)", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              <div key={idx} style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(255,255,255,0.12)", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: 'relative' }}>
                 {captures[idx] ? (
-                  <img src={captures[idx].image} alt={`Capture ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <>
+                    <img src={captures[idx].image} alt={`Capture ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <button onClick={() => handleRemoveCapture(idx)} className="remove-preview-btn">×</button>
+                  </>
                 ) : (
                   <span style={{ color: "#fff", opacity: 0.5 }}>{idx + 1}</span>
                 )}
@@ -143,9 +146,6 @@ const RoomScanOverlay = () => {
               <h3 className="overlay-text">Analyzing Photos{analyzingDots}</h3>
               <p className="overlay-text">{analyzeProgress} / {NUM_CAPTURES}</p>
             </div>
-          )}
-          {captures.length > 0 && !analyzing && (
-            <button onClick={handleRetake} className="button-secondary" style={{ marginTop: 16 }}>Retake All Photos</button>
           )}
         </div>
       </div>
