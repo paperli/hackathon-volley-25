@@ -14,6 +14,7 @@ const TaskOverlay = () => {
   const [forgeError, setForgeError] = useState(null);
   const [fadeError, setFadeError] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [forgeDebug, setForgeDebug] = useState(null);
 
   const currentTask = state.tasks[state.currentTaskIndex];
   const inventoryNames = state.inventory.map(obj => obj.name);
@@ -78,6 +79,7 @@ const TaskOverlay = () => {
     });
     setActiveIdx(idx);
     setForgeError(null);
+    setForgeDebug(null);
   };
 
   const handleForge = () => {
@@ -93,6 +95,11 @@ const TaskOverlay = () => {
       setGamePhase("end");
     } else {
       setForgeError("Those objects can't be forged for this task. Try again!");
+      // Store debug info for display
+      setForgeDebug({
+        requirements: currentTask.requirements,
+        selected: [captures[0].object, captures[1].object],
+      });
     }
   };
 
@@ -167,7 +174,20 @@ const TaskOverlay = () => {
               {error}
             </div>
           </div>}
-          {forgeError && <p className="overlay-text" style={{ color: '#ff4d4f' }}>{forgeError}</p>}
+          {forgeError && <>
+            <p className="overlay-text" style={{ color: '#ff4d4f' }}>{forgeError}</p>
+            {forgeDebug && (
+              <div style={{ background: 'rgba(255,255,255,0.07)', color: '#fff', borderRadius: 8, padding: '10px 16px', margin: '8px 0', fontSize: 13, textAlign: 'left' }}>
+                <div><strong>Required IDs:</strong> {forgeDebug.requirements.join(", ")}</div>
+                <div><strong>Selected:</strong></div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {forgeDebug.selected.map((obj, i) => (
+                    <li key={i}>{obj?.name} <span style={{ color: '#FFC145' }}>({obj?.id || obj?.name})</span></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>}
           {analyzing && <p className="overlay-text">Analyzing...</p>}
         </div>
       </div>

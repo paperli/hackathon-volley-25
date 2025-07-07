@@ -8,7 +8,7 @@ import RoomScanOverlay from "./components/RoomScanOverlay";
 import TaskOverlay from "./components/TaskOverlay";
 
 function OverlayManager() {
-  const { state, setGamePhase } = useGame();
+  const { state, setGamePhase, resetGame } = useGame();
 
   if (state.gamePhase === "rules") {
     return (
@@ -26,12 +26,26 @@ function OverlayManager() {
     return <TaskOverlay />;
   }
   if (state.gamePhase === "end") {
-    // Placeholder for End overlay
+    // Game End overlay
+    const lastTask = state.tasks[state.currentTaskIndex] || state.tasks[state.currentTaskIndex - 1];
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
-          <div className="overlay-card">
-            <h2 className="overlay-text">Game End Overlay (Coming Soon)</h2>
+          <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
+            <h2 className="overlay-text">🎉 Congratulations!</h2>
+            <p className="overlay-text" style={{ fontWeight: 500, fontSize: '1.2em' }}>You completed the forging challenge!</p>
+            {lastTask && (
+              <div style={{ margin: '18px 0' }}>
+                <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>Task:</div>
+                <div className="overlay-text" style={{ marginTop: 4 }}>{lastTask.description}</div>
+              </div>
+            )}
+            <button
+              onClick={resetGame}
+              style={{ marginTop: 24, padding: '0.75rem 2rem', fontSize: '1.1rem', background: '#FFC145', color: '#181c20', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Play Again
+            </button>
           </div>
         </div>
       </div>
