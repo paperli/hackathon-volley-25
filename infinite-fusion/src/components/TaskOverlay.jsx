@@ -4,6 +4,26 @@ import { useGame } from "../game/GameContext";
 
 const ANSWER_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-answer`;
 
+// Generate a creative fusion name from two object names
+function getCreativeFusionName(a, b) {
+  const templates = [
+    `${a}${b.slice(0, 2)}`,
+    `${b}${a.slice(0, 2)}`,
+    `The ${a}${b}`,
+    `${a}-${b} 3000`,
+    `Mega${a}${b}`,
+    `${a}${b}inator`,
+    `Ultra ${a} ${b}`,
+    `The ${a} of ${b}`,
+    `${a}${b}`.replace(/(.)([A-Z])/g, '$1 $2'),
+    `${a}${b}`.toLowerCase(),
+    `${a}${b}`.toUpperCase(),
+    `${a}${b}`.split('').reverse().join(''),
+    `${a}${b}`.replace(/[aeiou]/gi, ''),
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
 const TaskOverlay = () => {
   const { videoRef } = useCameraStream();
   const { state, setGamePhase, setEndTime, completeTask } = useGame();
@@ -94,7 +114,7 @@ const TaskOverlay = () => {
       setEndTime(Date.now());
       setGamePhase("end");
     } else {
-      const fusionName = `${captures[0].object.name}-${captures[1].object.name}`;
+      const fusionName = getCreativeFusionName(captures[0].object.name, captures[1].object.name);
       setForgeError(`Those objects can't be forged for this task, but you created: ${fusionName}! Try again or experiment with more combinations!`);
       setForgeDebug({
         requirements: currentTask.requirements,
