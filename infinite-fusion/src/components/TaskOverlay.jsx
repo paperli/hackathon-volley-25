@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
@@ -45,6 +45,23 @@ function isFuzzyForge(selected, requirements, threshold = 0.7) {
   return reqs.length === 0;
 }
 
+// Global hook for animated dot dot dot (e.g., for loading states)
+function useDotDotDot(active = true, intervalMs = 400) {
+  const [dots, setDots] = useState(1);
+  const timer = useRef();
+  useEffect(() => {
+    if (!active) {
+      setDots(1);
+      return;
+    }
+    timer.current = setInterval(() => {
+      setDots((d) => (d % 3) + 1);
+    }, intervalMs);
+    return () => clearInterval(timer.current);
+  }, [active, intervalMs]);
+  return '.'.repeat(dots);
+}
+
 const TaskOverlay = () => {
   const { videoRef } = useCameraStream();
   const { state, setGamePhase, setEndTime, setStartTime, completeTask, setTasks } = useGame();
@@ -59,6 +76,7 @@ const TaskOverlay = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(null);
   const [elapsed, setElapsed] = useState(0);
+  const analyzingDots = useDotDotDot(analyzing);
 
   const currentTask = state.tasks[state.currentTaskIndex];
   const inventoryNames = state.inventory.map(obj => obj.name);
@@ -256,7 +274,7 @@ const TaskOverlay = () => {
               {captures[0] ? (
                 <>
                   <img src={captures[0].image} alt="Object 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => handleRetake(0)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer', zIndex: 1001 }}>×</button>
+                  <button onClick={() => handleRetake(0)} className="remove-preview-btn">×</button>
                   <div style={{ position: 'absolute', bottom: 2, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 13, padding: '2px 4px', borderRadius: 6, textAlign: 'center' }}>{captures[0].object?.name}</div>
                 </>
               ) : (
@@ -270,7 +288,7 @@ const TaskOverlay = () => {
               {captures[1] ? (
                 <>
                   <img src={captures[1].image} alt="Object 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => handleRetake(1)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer', zIndex: 1001 }}>×</button>
+                  <button onClick={() => handleRetake(1)} className="remove-preview-btn">×</button>
                   <div style={{ position: 'absolute', bottom: 2, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 13, padding: '2px 4px', borderRadius: 6, textAlign: 'center' }}>{captures[1].object?.name}</div>
                 </>
               ) : (
@@ -303,7 +321,11 @@ const TaskOverlay = () => {
               </div>
             )}
           </>}
-          {analyzing && <p className="overlay-text">Analyzing...</p>}
+          {analyzing && (
+            <div style={{ margin: '12px 0', color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>
+              Analyzing{analyzingDots}
+            </div>
+          )}
           {refreshError && <div style={{ color: '#ff4d4f', fontWeight: 500, margin: '8px 0' }}>{refreshError}</div>}
         </div>
       </div>
