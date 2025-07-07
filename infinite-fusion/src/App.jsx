@@ -28,14 +28,14 @@ function OverlayManager() {
   if (state.gamePhase === "end") {
     // Game End overlay
     const lastTask = state.tasks[state.currentTaskIndex] || state.tasks[state.currentTaskIndex - 1];
-    const durationSec = state.startTime && state.endTime ? ((state.endTime - state.startTime) / 1000).toFixed(1) : null;
+    const durationSec = state.startTime && state.endTime ? Math.floor((state.endTime - state.startTime) / 1000) : null;
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
             <h2 className="overlay-text">🎉 Congratulations!</h2>
             <p className="overlay-text" style={{ fontWeight: 500, fontSize: '1.2em' }}>You completed the forging challenge!</p>
-            {durationSec && (
+            {durationSec !== null && (
               <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em', margin: '12px 0' }}>
                 Time taken: {durationSec} seconds
               </div>

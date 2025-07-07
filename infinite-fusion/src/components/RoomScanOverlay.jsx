@@ -1,10 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
 const SCAN_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-scan`;
 const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
 const NUM_CAPTURES = 4;
+
+// Global hook for animated dot dot dot (e.g., for loading states)
+function useDotDotDot(active = true, intervalMs = 400) {
+  const [dots, setDots] = useState(1);
+  const timer = useRef();
+  useEffect(() => {
+    if (!active) {
+      setDots(1);
+      return;
+    }
+    timer.current = setInterval(() => {
+      setDots((d) => (d % 3) + 1);
+    }, intervalMs);
+    return () => clearInterval(timer.current);
+  }, [active, intervalMs]);
+  return '.'.repeat(dots);
+}
 
 const RoomScanOverlay = () => {
   const { videoRef } = useCameraStream();
@@ -13,6 +30,8 @@ const RoomScanOverlay = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeProgress, setAnalyzeProgress] = useState(0);
   const [error, setError] = useState(null);
+
+  const analyzingDots = useDotDotDot(analyzing);
 
   const handleCapture = async () => {
     const video = videoRef.current;
@@ -121,7 +140,7 @@ const RoomScanOverlay = () => {
           {error && <p className="overlay-text" style={{ color: "#ffb300" }}>{error}</p>}
           {analyzing && (
             <div style={{ marginTop: 24 }}>
-              <h3 className="overlay-text">Analyzing Photos...</h3>
+              <h3 className="overlay-text">Analyzing Photos{analyzingDots}</h3>
               <p className="overlay-text">{analyzeProgress} / {NUM_CAPTURES}</p>
             </div>
           )}

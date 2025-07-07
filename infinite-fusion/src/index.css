@@ -261,13 +261,14 @@ button:focus-visible {
   right: 2px;
   background: rgba(0,0,0,0.5);
   color: #fff;
-  border: 'none';
+  border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   font-size: 14px;
   cursor: pointer;
   z-index: 1001;
+  padding: 0;
 }
 
 /* Overlay card for modals */

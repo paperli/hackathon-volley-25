@@ -322,7 +322,7 @@ const TaskOverlay = () => {
             )}
           </>}
           {analyzing && (
-            <div style={{ margin: '12px 0', color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>
+            <div style={{ margin: '12px 0', color: '#fff', fontWeight: 600, fontSize: '1.1em' }}>
               Analyzing{analyzingDots}
             </div>
           )}
