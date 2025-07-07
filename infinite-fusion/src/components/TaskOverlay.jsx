@@ -207,7 +207,7 @@ const TaskOverlay = () => {
             onClick={handleForge}
             aria-label="Forge Objects"
           >
-            Forge
+            ⚒️
           </button>
         </div>
       )}
