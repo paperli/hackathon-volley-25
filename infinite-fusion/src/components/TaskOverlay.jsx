@@ -94,11 +94,12 @@ const TaskOverlay = () => {
       setEndTime(Date.now());
       setGamePhase("end");
     } else {
-      setForgeError("Those objects can't be forged for this task. Try again!");
-      // Store debug info for display
+      const fusionName = `${captures[0].object.name}-${captures[1].object.name}`;
+      setForgeError(`Those objects can't be forged for this task, but you created: ${fusionName}! Try again or experiment with more combinations!`);
       setForgeDebug({
         requirements: currentTask.requirements,
         selected: [captures[0].object, captures[1].object],
+        fusionName,
       });
     }
   };
@@ -135,7 +136,7 @@ const TaskOverlay = () => {
               {captures[0] ? (
                 <>
                   <img src={captures[0].image} alt="Object 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => handleRetake(0)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer' }}>×</button>
+                  <button onClick={() => handleRetake(0)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer', zIndex: 1001 }}>×</button>
                   <div style={{ position: 'absolute', bottom: 2, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 13, padding: '2px 4px', borderRadius: 6, textAlign: 'center' }}>{captures[0].object?.name}</div>
                 </>
               ) : (
@@ -149,7 +150,7 @@ const TaskOverlay = () => {
               {captures[1] ? (
                 <>
                   <img src={captures[1].image} alt="Object 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => handleRetake(1)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer' }}>×</button>
+                  <button onClick={() => handleRetake(1)} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 14, cursor: 'pointer', zIndex: 1001 }}>×</button>
                   <div style={{ position: 'absolute', bottom: 2, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 13, padding: '2px 4px', borderRadius: 6, textAlign: 'center' }}>{captures[1].object?.name}</div>
                 </>
               ) : (
@@ -176,15 +177,9 @@ const TaskOverlay = () => {
           </div>}
           {forgeError && <>
             <p className="overlay-text" style={{ color: '#ff4d4f' }}>{forgeError}</p>
-            {forgeDebug && (
-              <div style={{ background: 'rgba(255,255,255,0.07)', color: '#fff', borderRadius: 8, padding: '10px 16px', margin: '8px 0', fontSize: 13, textAlign: 'left' }}>
-                <div><strong>Required IDs:</strong> {forgeDebug.requirements.join(", ")}</div>
-                <div><strong>Selected:</strong></div>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {forgeDebug.selected.map((obj, i) => (
-                    <li key={i}>{obj?.name} <span style={{ color: '#FFC145' }}>({obj?.id || obj?.name})</span></li>
-                  ))}
-                </ul>
+            {forgeDebug && forgeDebug.fusionName && (
+              <div style={{ background: 'rgba(255,255,255,0.07)', color: '#fff', borderRadius: 8, padding: '10px 16px', margin: '8px 0', fontSize: 15, textAlign: 'center', fontWeight: 600 }}>
+                <span>Fusion Result: </span>{forgeDebug.fusionName}
               </div>
             )}
           </>}
