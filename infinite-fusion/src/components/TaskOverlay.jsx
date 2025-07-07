@@ -3,6 +3,7 @@ import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
 const ANSWER_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-answer`;
+const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
 
 // Generate a creative fusion name from two object names
 function getCreativeFusionName(a, b) {
@@ -24,9 +25,29 @@ function getCreativeFusionName(a, b) {
   return templates[Math.floor(Math.random() * templates.length)];
 }
 
+// Fuzzy match two strings based on shared tokens
+function fuzzyMatch(a, b) {
+  const tokenize = str => str.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ');
+  const tokensA = tokenize(a);
+  const tokensB = tokenize(b);
+  const shared = tokensA.filter(token => tokensB.includes(token));
+  return shared.length / ((tokensA.length + tokensB.length) / 2);
+}
+
+// Returns true if all selected match requirements (order-insensitive, one-to-one, fuzzy)
+function isFuzzyForge(selected, requirements, threshold = 0.7) {
+  const reqs = [...requirements];
+  for (const sel of selected) {
+    const idx = reqs.findIndex(req => fuzzyMatch(sel, req) >= threshold);
+    if (idx === -1) return false;
+    reqs.splice(idx, 1);
+  }
+  return reqs.length === 0;
+}
+
 const TaskOverlay = () => {
   const { videoRef } = useCameraStream();
-  const { state, setGamePhase, setEndTime, completeTask } = useGame();
+  const { state, setGamePhase, setEndTime, setStartTime, completeTask, setTasks } = useGame();
   const [captures, setCaptures] = useState([null, null]); // [{ image, object }, { image, object }]
   const [activeIdx, setActiveIdx] = useState(0); // 0 or 1
   const [analyzing, setAnalyzing] = useState(false);
@@ -35,6 +56,9 @@ const TaskOverlay = () => {
   const [fadeError, setFadeError] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [forgeDebug, setForgeDebug] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
 
   const currentTask = state.tasks[state.currentTaskIndex];
   const inventoryNames = state.inventory.map(obj => obj.name);
@@ -53,6 +77,28 @@ const TaskOverlay = () => {
       setFadeError(false);
     }
   }, [error]);
+
+  // Live timer for task phase
+  useEffect(() => {
+    let interval;
+    if (state.gamePhase === 'task' && state.startTime && !state.endTime) {
+      const update = () => setElapsed(Math.floor((Date.now() - state.startTime) / 1000));
+      update();
+      interval = setInterval(update, 100);
+    } else if (state.endTime && state.startTime) {
+      setElapsed(Math.floor((state.endTime - state.startTime) / 1000));
+    } else {
+      setElapsed(0);
+    }
+    return () => interval && clearInterval(interval);
+  }, [state.gamePhase, state.startTime, state.endTime]);
+
+  // Ensure startTime is set when entering task phase
+  useEffect(() => {
+    if (state.gamePhase === 'task' && !state.startTime) {
+      setStartTime(Date.now());
+    }
+  }, [state.gamePhase, state.startTime, setStartTime]);
 
   const handleCapture = async () => {
     setError(null);
@@ -106,10 +152,8 @@ const TaskOverlay = () => {
     setForgeError(null);
     if (!captures[0] || !captures[1]) return;
     const ids = [captures[0].object.name, captures[1].object.name];
-    // Check if the captured objects match the task requirements (order-insensitive)
-    const reqs = currentTask.requirements.slice().sort();
-    const selected = ids.slice().sort();
-    if (JSON.stringify(reqs) === JSON.stringify(selected)) {
+    // Fuzzy match selected objects to requirements (order-insensitive, one-to-one)
+    if (isFuzzyForge(ids, currentTask.requirements)) {
       completeTask();
       setEndTime(Date.now());
       setGamePhase("end");
@@ -124,11 +168,67 @@ const TaskOverlay = () => {
     }
   };
 
+  // Regenerate a new task
+  const handleRefreshTask = async () => {
+    setRefreshing(true);
+    setRefreshError(null);
+    try {
+      const objectNames = state.inventory.map(obj => obj.name);
+      const response = await fetch(TASK_GEN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objects: objectNames }),
+      });
+      const result = await response.json();
+      if (result.task) {
+        setTasks([result.task]);
+        setShowHint(false);
+        setCaptures([null, null]);
+        setForgeError(null);
+        setForgeDebug(null);
+      } else {
+        setRefreshError(result.error || "Failed to generate task.");
+      }
+    } catch {
+      setRefreshError("Failed to generate task.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <div className="overlay">
       <div className="overlay-content overlay-center">
         <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
-          <h2 className="overlay-text">Task</h2>
+          <h2 className="overlay-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            Task
+            <button
+              onClick={handleRefreshTask}
+              disabled={refreshing}
+              style={{
+                background: 'none',
+                border: 'none',
+                marginLeft: 8,
+                cursor: refreshing ? 'not-allowed' : 'pointer',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                opacity: refreshing ? 0.5 : 1,
+              }}
+              aria-label="Regenerate Task"
+            >
+              {refreshing ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFC145" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin"><circle cx="12" cy="12" r="10"/><path d="M4 12a8 8 0 0 1 8-8"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFC145" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.37 5.37A9 9 0 0 0 20.49 15"/></svg>
+              )}
+            </button>
+          </h2>
+          {state.gamePhase === 'task' && (
+            <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em', margin: '4px 0 10px 0', textAlign: 'center' }}>
+              {elapsed}s
+            </div>
+          )}
           <p className="overlay-text" style={{ fontWeight: 500 }}>{currentTask?.description}</p>
           {currentTask?.solutionHint && !showHint && (
             <button
@@ -204,6 +304,7 @@ const TaskOverlay = () => {
             )}
           </>}
           {analyzing && <p className="overlay-text">Analyzing...</p>}
+          {refreshError && <div style={{ color: '#ff4d4f', fontWeight: 500, margin: '8px 0' }}>{refreshError}</div>}
         </div>
       </div>
       {/* Capture button at the bottom center, only if not analyzing and not both captured */}
