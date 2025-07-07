@@ -13,6 +13,7 @@ const TaskOverlay = () => {
   const [error, setError] = useState(null);
   const [forgeError, setForgeError] = useState(null);
   const [fadeError, setFadeError] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const currentTask = state.tasks[state.currentTaskIndex];
   const inventoryNames = state.inventory.map(obj => obj.name);
@@ -101,8 +102,25 @@ const TaskOverlay = () => {
         <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
           <h2 className="overlay-text">Task</h2>
           <p className="overlay-text" style={{ fontWeight: 500 }}>{currentTask?.description}</p>
-          {currentTask?.solutionHint && (
-            <p className="overlay-text" style={{ color: '#ffe1a8', fontStyle: 'italic', fontSize: '0.95em' }}>{currentTask.solutionHint}</p>
+          {currentTask?.solutionHint && !showHint && (
+            <button
+              onClick={() => setShowHint(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#FFC145',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: '1em',
+                margin: '8px 0',
+                fontWeight: 500,
+              }}
+            >
+              Hint
+            </button>
+          )}
+          {currentTask?.solutionHint && showHint && (
+            <p className="overlay-text" style={{ color: '#ffe1a8', fontStyle: 'italic', fontSize: '0.95em', marginTop: 8 }}>{currentTask.solutionHint}</p>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '24px 0' }}>
             {/* Left thumbnail */}
