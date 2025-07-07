@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
-const BACKEND_URL = "http://localhost:4000/analyze"; // Update as needed
+const BACKEND_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze`;
+const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
 const NUM_CAPTURES = 4;
 
 const RoomScanOverlay = () => {
   const { videoRef } = useCameraStream();
-  const { setRoomScanImages, setInventory, setGamePhase } = useGame();
+  const { setRoomScanImages, setInventory, setGamePhase, setTasks } = useGame();
   const [captures, setCaptures] = useState([]); // { image }
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeProgress, setAnalyzeProgress] = useState(0);
@@ -63,7 +64,28 @@ const RoomScanOverlay = () => {
       );
       setRoomScanImages(captures.map((c) => c.image));
       setInventory(allObjects);
-      setGamePhase("task");
+      // Generate a task using the detected objects
+      if (allObjects.length >= 2) {
+        const objectNames = allObjects.map(obj => obj.name);
+        try {
+          const response = await fetch(TASK_GEN_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ objects: objectNames }),
+          });
+          const result = await response.json();
+          if (result.task) {
+            setTasks([result.task]);
+            setGamePhase("task");
+          } else {
+            setError(result.error || "Failed to generate task.");
+          }
+        } catch {
+          setError("Failed to generate task.");
+        }
+      } else {
+        setError("Not enough objects detected to generate a task.");
+      }
     } catch {
       setError("Failed to analyze images.");
     } finally {
@@ -97,15 +119,6 @@ const RoomScanOverlay = () => {
             ))}
           </div>
           {error && <p className="overlay-text" style={{ color: "#ffb300" }}>{error}</p>}
-          {!analyzing && captures.length < NUM_CAPTURES && (
-            <button
-              className="capture-btn"
-              onClick={handleCapture}
-              style={{ marginTop: 24 }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /></svg>
-            </button>
-          )}
           {analyzing && (
             <div style={{ marginTop: 24 }}>
               <h3 className="overlay-text">Analyzing Photos...</h3>
@@ -117,6 +130,18 @@ const RoomScanOverlay = () => {
           )}
         </div>
       </div>
+      {/* Capture button at the bottom center */}
+      {!analyzing && captures.length < NUM_CAPTURES && (
+        <div className="overlay-content overlay-bottom">
+          <button
+            className="capture-btn"
+            onClick={handleCapture}
+            aria-label="Capture Room Photo"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /></svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

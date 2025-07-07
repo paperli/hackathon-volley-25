@@ -5,6 +5,7 @@ import CameraBackground from "./components/CameraBackground";
 import GameScreen from "./game/GameScreen";
 import GameRules from "./pages/GameRules";
 import RoomScanOverlay from "./components/RoomScanOverlay";
+import TaskOverlay from "./components/TaskOverlay";
 
 function OverlayManager() {
   const { state, setGamePhase } = useGame();
@@ -22,16 +23,7 @@ function OverlayManager() {
     return <RoomScanOverlay />;
   }
   if (state.gamePhase === "task") {
-    // Placeholder for Task overlay
-    return (
-      <div className="overlay">
-        <div className="overlay-content overlay-center">
-          <div className="overlay-card">
-            <h2 className="overlay-text">Task Overlay (Coming Soon)</h2>
-          </div>
-        </div>
-      </div>
-    );
+    return <TaskOverlay />;
   }
   if (state.gamePhase === "end") {
     // Placeholder for End overlay
