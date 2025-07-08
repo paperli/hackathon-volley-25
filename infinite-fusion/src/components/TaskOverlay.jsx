@@ -300,13 +300,26 @@ const TaskOverlay = () => {
       prevImageUrl.current = failedImageUrl;
     }
   }, [failedImageUrl]);
+  // Copy variations for fail state title
+  const failTitles = [
+    'Not Quite There',
+    'Almost!',
+    'Try Again!',
+    'So Close!',
+    'Keep Going!',
+    'Missed It!',
+    'One More Try!',
+  ];
+  function getRandomFailTitle() {
+    return failTitles[Math.floor(Math.random() * failTitles.length)];
+  }
   const FailedForgeModal = () => {
     console.log("Rendering failed modal, failedImageUrl:", failedImageUrl, "failedLoading:", failedLoading);
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420, justifyContent: 'center', alignItems: 'center' }}>
-            <h2 className="overlay-text">Not Quite There</h2>
+            <h2 className="overlay-text">{getRandomFailTitle()}</h2>
             <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
             <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
               <b>{failedObjectName || "a new object"}</b>
