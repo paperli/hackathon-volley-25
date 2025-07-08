@@ -240,6 +240,113 @@ app.post('/generate-task', async (req, res) => {
   }
 });
 
+// POST /generate-image: expects { objectName }
+app.post('/generate-image', async (req, res) => {
+  const { objectName } = req.body;
+  if (!objectName) {
+    return res.status(400).json({ error: 'objectName is required' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  try {
+    // Use OpenAI gpt-image-1 for image generation
+    const response = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt: `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles.`,
+      n: 1,
+      size: '1024x1024',
+      background: 'transparent',
+    });
+    let imageUrl = response.data[0]?.url;
+    if (!imageUrl && response.data[0]?.b64_json) {
+      imageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
+    }
+    if (!imageUrl) {
+      return res.status(500).json({ error: 'No image URL returned from OpenAI.' });
+    }
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('OpenAI image generation error:', err);
+    res.status(500).json({ error: 'Failed to generate image' });
+  }
+});
+
+// POST /generate-capability: expects { objectName }
+app.post('/generate-capability', async (req, res) => {
+  const { objectName } = req.body;
+  if (!objectName) {
+    return res.status(400).json({ error: 'objectName is required' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  const prompt = `In one short sentence, describe a fun, whimsical, or surprising capability for an invented object called "${objectName}". Do not mention the name again in the sentence. Example: "It can turn socks into sandwiches."`;
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 40,
+    });
+    const capability = response.choices[0]?.message?.content?.trim();
+    if (!capability) {
+      return res.status(500).json({ error: 'No capability returned from OpenAI.' });
+    }
+    res.json({ capability });
+  } catch (err) {
+    console.error('OpenAI capability generation error:', err);
+    res.status(500).json({ error: 'Failed to generate capability with OpenAI.' });
+  }
+});
+
+// POST /generate-fusion-meta: expects { baseNames: [a, b] }
+app.post('/generate-fusion-meta', async (req, res) => {
+  const { baseNames } = req.body;
+  if (!baseNames || !Array.isArray(baseNames) || baseNames.length !== 2) {
+    return res.status(400).json({ error: 'baseNames (array of two strings) is required' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  try {
+    const prompt = `You are a creative game designer. Given the following two real-world objects: "${baseNames[0]}" and "${baseNames[1]}", invent a fun, creative fusion name for the new object, and write a whimsical one-sentence capability for it, make sure it's short and creative. Respond in JSON with keys 'fusionName' and 'capability'.`;
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.9,
+      max_tokens: 120,
+    });
+    const text = response.choices[0]?.message?.content || '';
+    let fusionName = '', capability = '';
+    try {
+      const json = JSON.parse(text);
+      fusionName = json.fusionName;
+      capability = json.capability;
+    } catch {
+      // fallback: try to extract from text
+      const match = text.match(/"fusionName"\s*:\s*"([^"]+)"/);
+      if (match) fusionName = match[1];
+      const capMatch = text.match(/"capability"\s*:\s*"([^"]+)"/);
+      if (capMatch) capability = capMatch[1];
+    }
+    if (!fusionName || !capability) {
+      return res.status(500).json({ error: 'Failed to parse fusionName or capability from OpenAI response', raw: text });
+    }
+    res.json({ fusionName, capability });
+  } catch (err) {
+    console.error('OpenAI fusion meta generation error:', err);
+    res.status(500).json({ error: 'Failed to generate fusion meta' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 }); 

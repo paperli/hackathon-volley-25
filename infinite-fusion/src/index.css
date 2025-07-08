@@ -129,6 +129,8 @@ button {
   cursor: pointer;
   transition: border-color 0.25s, background 0.25s, color 0.25s;
   text-transform: uppercase;
+  min-height: 48px;
+  max-height: 48px;
 }
 button:hover {
   border-color: var(--color-primary-hover);
@@ -160,8 +162,7 @@ button:focus-visible {
 
 .button-secondary {
   background: var(--color-bg-card);
-  color: var(--color-primary);
-  border: 1.5px solid var(--color-primary);
+  color: var(--color-button-text);
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 .button-secondary:hover, .button-secondary:focus {
@@ -283,6 +284,10 @@ button:focus-visible {
   border-radius: 50%;
   width: 24px;
   height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  max-width: 24px;
+  min-width: 24px;
   font-size: 14px;
   cursor: pointer;
   z-index: 1001;
