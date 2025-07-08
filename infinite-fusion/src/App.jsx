@@ -14,6 +14,7 @@ function OverlayManager() {
   const [scoreExpanded, setScoreExpanded] = React.useState(false);
   const [fusedName, setFusedName] = React.useState("");
   const [fusedImageUrl, setFusedImageUrl] = React.useState("");
+  const [fusedImageLoading, setFusedImageLoading] = React.useState(false);
 
   // New Play Again handler
   const handlePlayAgain = async () => {
@@ -66,6 +67,7 @@ function OverlayManager() {
   React.useEffect(() => {
     if (state.gamePhase === 'end' && fusedName) {
       setFusedImageUrl("");
+      setFusedImageLoading(true);
       fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,9 +78,23 @@ function OverlayManager() {
           if (data.imageUrl) setFusedImageUrl(data.imageUrl);
         })
         .catch(() => setFusedImageUrl(""))
-        .finally(() => {});
+        .finally(() => setFusedImageLoading(false));
     }
   }, [state.gamePhase, fusedName]);
+
+  // Handler to set loading false when image loads or fails
+  const handleFusedImageLoad = () => setFusedImageLoading(false);
+  const handleFusedImageError = () => setFusedImageLoading(false);
+
+  // Simple spinner for loading states (copied from failed object modal)
+  function Spinner() {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 64 }}>
+        <div className="spinner" style={{ width: 36, height: 36, border: '4px solid #FFC145', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (state.gamePhase === "rules") {
     return (
@@ -119,11 +135,21 @@ function OverlayManager() {
                 <div className="overlay-text" style={{ marginTop: 4, marginBottom: 12, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
                   <b>{fusedName || "a new object"}</b>
                 </div>
-                {fusedImageUrl && (
-                  <div style={{ minHeight: 120, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96 }}>
-                    <img src={fusedImageUrl} alt={fusedName} style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent', position: 'absolute', top: 0, left: 0 }} />
+                {fusedImageLoading ? (
+                  <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '16px auto' }}>
+                    <Spinner />
                   </div>
-                )}
+                ) : fusedImageUrl ? (
+                  <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '16px auto' }}>
+                    <img
+                      src={fusedImageUrl}
+                      alt={fusedName}
+                      style={{ width: 120, height: 120, objectFit: 'contain', display: 'block' }}
+                      onLoad={handleFusedImageLoad}
+                      onError={handleFusedImageError}
+                    />
+                  </div>
+                ) : null}
                 {/* Score Collapse Menu (moved here) */}
                 <div style={{ margin: 0 }}>
                   <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px' }}>

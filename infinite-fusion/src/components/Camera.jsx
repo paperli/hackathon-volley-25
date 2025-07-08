@@ -171,7 +171,7 @@ const Camera = ({ onCapture }) => {
       )}
       {analyzing && (
         <div style={{ marginTop: 'var(--space-lg)' }}>
-          <h3>Analyzing Photos...</h3>
+          <h4>Analyzing Photos...</h4>
           <p>Analyzing {analyzeProgress} / {NUM_CAPTURES}</p>
         </div>
       )}

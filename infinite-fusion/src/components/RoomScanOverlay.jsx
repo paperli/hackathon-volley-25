@@ -124,7 +124,7 @@ const RoomScanOverlay = ({ setFusedName }) => {
           {error && <p className="overlay-text" style={{ color: "#ffb300" }}>{error}</p>}
           {analyzing && (
             <div style={{ marginTop: 24 }}>
-              <h3 className="overlay-text">Analyzing Photos{analyzingDots}</h3>
+              <h4 className="overlay-text">Analyzing Your Room{analyzingDots}</h4>
             </div>
           )}
         </div>
