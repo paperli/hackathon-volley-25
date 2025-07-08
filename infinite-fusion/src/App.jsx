@@ -68,6 +68,25 @@ function OverlayManager() {
     }
   };
 
+  // Share handler
+  const handleShare = () => {
+    const shareText = fusedName
+      ? `I invented "${fusedName}" in Infinite Fusion! The challenge: ${state.tasks[state.currentTaskIndex]?.description}`
+      : `I played Infinite Fusion! The challenge: ${state.tasks[state.currentTaskIndex]?.description}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Infinite Fusion',
+        text: shareText,
+        url: window.location.origin
+      }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText);
+      alert('Share text copied to clipboard!');
+    } else {
+      alert(shareText);
+    }
+  };
+
   if (state.gamePhase === "rules") {
     return (
       <div className="overlay">
@@ -161,12 +180,18 @@ function OverlayManager() {
                 <div className="overlay-text" style={{ marginTop: 8, fontSize: '1.1em', color: '#fff' }}>
                   {`That solves: ${lastTask.description}`}
                 </div>
+                <button
+                  onClick={handleShare}
+                  style={{ marginTop: 16 }}
+                >
+                  Share
+                </button>
               </div>
             )}
             {error && <div style={{ color: '#ff4d4f', marginTop: 12 }}>{error}</div>}
             <button
               onClick={handlePlayAgain}
-              style={{ marginTop: 4, padding: '0.75rem 2rem', fontSize: '1.1rem', background: '#FFC145', color: '#181c20', border: 'none', borderRadius: 8, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+              style={{ marginTop: 4, opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
               disabled={loading}
             >
               {loading ? 'Loading...' : 'Forge Another'}

@@ -120,14 +120,15 @@ p {
 button {
   border-radius: var(--radius);
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: var(--font-size-md);
-  font-weight: 500;
+  padding: 0.6rem 1.2rem;
+  font-size: 1.2rem;
+  font-weight: 600;
   font-family: inherit;
   background-color: var(--color-button-bg);
   color: var(--color-button-text);
   cursor: pointer;
   transition: border-color 0.25s, background 0.25s, color 0.25s;
+  text-transform: uppercase;
 }
 button:hover {
   border-color: var(--color-primary-hover);
