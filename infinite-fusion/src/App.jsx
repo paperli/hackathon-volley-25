@@ -8,9 +8,35 @@ import RoomScanOverlay from "./components/RoomScanOverlay";
 import TaskOverlay from "./components/TaskOverlay";
 
 function OverlayManager() {
-  const { state, setGamePhase, setTasks } = useGame();
+  const { state, setGamePhase, setTasks, setStartTime, setEndTime } = useGame();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+
+  // Adjustable cheer message parameters
+  const cheerThresholds = [20, 40, 90];
+  const cheerIcons = ["🚀", "🔨", "🏅", "😴"];
+  const cheerMessages = [
+    "Blazing Fast!",
+    "Speedy Smith!",
+    "Solid Work!",
+    "You took your time..."
+  ];
+
+  function getCheerMessage(durationSec, thresholds = cheerThresholds, messages = cheerMessages) {
+    if (durationSec == null) return "Congratulations!";
+    for (let i = 0; i < thresholds.length; i++) {
+      if (durationSec < thresholds[i]) return messages[i];
+    }
+    return messages[messages.length - 1];
+  }
+
+  function getCheerIcon(durationSec, icons = cheerIcons) {
+    if (durationSec == null) return cheerIcons[0];
+    for (let i = 0; i < cheerThresholds.length; i++) {
+      if (durationSec < cheerThresholds[i]) return icons[i];
+    }
+    return icons[icons.length - 1];
+  }
 
   // New Play Again handler
   const handlePlayAgain = async () => {
@@ -26,6 +52,8 @@ function OverlayManager() {
       const result = await response.json();
       if (result.task) {
         setTasks([result.task]);
+        setStartTime(Date.now());
+        setEndTime(undefined);
         setGamePhase("task");
       } else {
         setError(result.error || "Failed to generate new task.");
@@ -60,7 +88,8 @@ function OverlayManager() {
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
-            <h2 className="overlay-text">🎉 Congratulations!</h2>
+            <h1>{getCheerIcon(durationSec)}</h1>
+            <h1 className="overlay-text">{getCheerMessage(durationSec)}</h1>
             <p className="overlay-text" style={{ fontWeight: 500, fontSize: '1.2em' }}>You completed the forging challenge!</p>
             {durationSec !== null && (
               <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em', margin: '12px 0' }}>
