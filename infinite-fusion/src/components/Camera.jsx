@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useGame } from '../game/GameContext';
 import { useNavigate } from 'react-router-dom';
 
-const BACKEND_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze`;
+const SCAN_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-scan`;
 const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
 
 const NUM_CAPTURES = 4;
@@ -17,10 +17,8 @@ const Camera = ({ onCapture }) => {
   const [currentStep, setCurrentStep] = useState(0); // 0-based index
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeProgress, setAnalyzeProgress] = useState(0);
-  const [loading, setLoading] = useState(false); // for capture only
   const [taskLoading, setTaskLoading] = useState(false);
   const [taskError, setTaskError] = useState(null);
-  const [generatedTask, setGeneratedTask] = useState(null);
 
   const { addObject, setTasks } = useGame();
   const navigate = useNavigate();
@@ -72,46 +70,39 @@ const Camera = ({ onCapture }) => {
     setAnalyzedCaptures([]);
     setCurrentStep(0);
     setTaskError(null);
-    setGeneratedTask(null);
     setAnalyzing(false);
     setAnalyzeProgress(0);
   };
 
-  // After all photos are taken, analyze them in parallel
+  // After all photos are taken, analyze them in batch
   useEffect(() => {
     if (currentStep === NUM_CAPTURES && captures.length === NUM_CAPTURES) {
       setAnalyzing(true);
       setAnalyzeProgress(0);
       setAnalyzedCaptures([]);
-      Promise.all(
-        captures.map(async (c, idx) => {
-          try {
-            const response = await fetch(BACKEND_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ image: c.image }),
-            });
-            const result = await response.json();
-            setAnalyzeProgress(p => p + 1);
-            return { image: c.image, objects: result.objects || [] };
-          } catch {
-            setAnalyzeProgress(p => p + 1);
-            return { image: c.image, objects: [] };
-          }
+      // Send all images in one request to /analyze-scan
+      fetch(SCAN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: captures.map(c => c.image) }),
+      })
+        .then(res => res.json())
+        .then(result => {
+          // result.objects is the deduplicated list
+          setAnalyzedCaptures([{ image: null, objects: result.objects || [] }]);
+          setAnalyzeProgress(NUM_CAPTURES);
+          setAnalyzing(false);
         })
-      ).then(results => {
-        setAnalyzedCaptures(results);
-        setAnalyzing(false);
-      });
+        .catch(() => {
+          setAnalyzedCaptures([{ image: null, objects: [] }]);
+          setAnalyzeProgress(NUM_CAPTURES);
+          setAnalyzing(false);
+        });
     }
   }, [currentStep, captures]);
 
   // Merge all detected objects (deduplicate by name)
-  const allObjects = Array.from(
-    new Map(
-      analyzedCaptures.flatMap(c => c.objects).map(obj => [obj.name, obj])
-    ).values()
-  );
+  const allObjects = analyzedCaptures[0]?.objects || [];
 
   const handleStartGame = async () => {
     if (allObjects.length > 1) {
@@ -124,7 +115,6 @@ const Camera = ({ onCapture }) => {
       });
       setTaskLoading(true);
       setTaskError(null);
-      setGeneratedTask(null);
       try {
         const response = await fetch(TASK_GEN_URL, {
           method: 'POST',
@@ -134,12 +124,11 @@ const Camera = ({ onCapture }) => {
         const result = await response.json();
         if (result.task) {
           setTasks([result.task]);
-          setGeneratedTask(result.task);
           navigate('/game');
         } else {
           setTaskError(result.error || 'Failed to generate task.');
         }
-      } catch (err) {
+      } catch {
         setTaskError('Failed to generate task.');
       } finally {
         setTaskLoading(false);
@@ -165,8 +154,8 @@ const Camera = ({ onCapture }) => {
       {streaming && currentStep < NUM_CAPTURES && (
         <div style={{ margin: 'var(--space-md) 0' }}>
           <h3>Photo {currentStep + 1} of {NUM_CAPTURES}</h3>
-          <button onClick={handleCapture} style={{ padding: '0.5rem 1.5rem', fontSize: 'var(--font-size-md)' }} disabled={loading}>
-            {loading ? 'Saving...' : 'Capture'}
+          <button onClick={handleCapture} style={{ padding: '0.5rem 1.5rem', fontSize: 'var(--font-size-md)' }} disabled={taskLoading}>
+            {taskLoading ? 'Saving...' : 'Capture'}
           </button>
         </div>
       )}
