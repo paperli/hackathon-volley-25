@@ -13,7 +13,7 @@ const GameRules = ({ onStart }) => {
       <h1 style={{ marginBottom: 0 }}>⚒️</h1>
       <h1 className="game-title overlay-text">Infinite Fusion</h1>
       <p className="overlay-text"><strong>Infinite Fusion</strong> is a creative web scavenger game that turns your real-world environment into a playground for discovery and invention!</p>
-      <button onClick={handleStart} style={{ padding: '0.75rem 2rem', fontSize: '1.1rem', marginTop: 16 }}>
+      <button onClick={handleStart} style={{ padding: '0.75rem 1.5rem', fontSize: '1.2rem', textTransform: 'uppercase', fontWeight: 700, marginTop: 16 }}>
       Start Forging
       </button>
     </div>

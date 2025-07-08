@@ -218,7 +218,7 @@ const TaskOverlay = () => {
   return (
     <div className="overlay">
       <div className="overlay-content overlay-center">
-        <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
+        <div className="overlay-card compact" style={{ textAlign: "center", maxWidth: 420 }}>
           <h2 className="overlay-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             Task
             <button

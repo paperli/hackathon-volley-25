@@ -98,21 +98,23 @@ h1 {
   font-size: var(--font-size-xxl);
   line-height: 1.1;
   margin-block-start: 0.3em;
-  margin-block-end: 0.3em;
+  margin-block-end: 0.1em;
 }
 h2 {
   font-size: var(--font-size-xl);
-  margin-block-start: 0.3em;
-  margin-block-end: 0.3em;
+  margin-block-start: 0.2em;
+  margin-block-end: 0;
 }
 h3 {
   font-size: var(--font-size-lg);
+  margin-block-start: 0.1em;
+  margin-block-end: 0.1em;
 }
 
 p {
   font-size: var(--font-size-md);
   margin-block-start: 0.3em;
-  margin-block-end: 0.3em;
+  margin-block-end: 0.5em;
 }
 
 button {
@@ -180,7 +182,16 @@ button:focus-visible {
   inset: 0;
   z-index: 10;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
+
+.overlay.bottom {
+  justify-content: end;
+}
+
 .overlay-content {
   position: absolute;
   width: 100vw;
@@ -206,6 +217,12 @@ button:focus-visible {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.overlay-center-bottom {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -276,8 +293,12 @@ button:focus-visible {
   background: rgba(24,28,32,0.85);
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-  padding: var(--space-lg);
+  padding: var(--space-lg) var(--space-md);
   color: #fff;
   max-width: 90vw;
   margin: 0 1rem;
+}
+
+.overlay-card.compact {
+  padding: var(--space-md);
 }

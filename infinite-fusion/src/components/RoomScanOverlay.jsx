@@ -121,9 +121,9 @@ const RoomScanOverlay = () => {
   }, [captures]);
 
   return (
-    <div className="overlay">
-      <div className="overlay-content overlay-center">
-        <div className="overlay-card" style={{ textAlign: "center" }}>
+    <div className="overlay bottom">
+      <div className="overlay-content overlay-center-bottom" style={{ marginBottom: 120 }}>
+        <div className="overlay-card compact" style={{ textAlign: "center" }}>
           <h2 className="overlay-text">Scan Your Room</h2>
           <p className="overlay-text">Take 4 photos around you to detect movable objects in your space.</p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center", margin: "16px 0" }}>
