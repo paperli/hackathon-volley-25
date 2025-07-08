@@ -8,7 +8,34 @@ import RoomScanOverlay from "./components/RoomScanOverlay";
 import TaskOverlay from "./components/TaskOverlay";
 
 function OverlayManager() {
-  const { state, setGamePhase, resetGame } = useGame();
+  const { state, setGamePhase, setTasks } = useGame();
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  // New Play Again handler
+  const handlePlayAgain = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const objectNames = state.inventory.map(obj => obj.name);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-task`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objects: objectNames }),
+      });
+      const result = await response.json();
+      if (result.task) {
+        setTasks([result.task]);
+        setGamePhase("task");
+      } else {
+        setError(result.error || "Failed to generate new task.");
+      }
+    } catch {
+      setError("Failed to generate new task.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (state.gamePhase === "rules") {
     return (
@@ -46,11 +73,13 @@ function OverlayManager() {
                 <div className="overlay-text" style={{ marginTop: 4 }}>{lastTask.description}</div>
               </div>
             )}
+            {error && <div style={{ color: '#ff4d4f', marginTop: 12 }}>{error}</div>}
             <button
-              onClick={resetGame}
-              style={{ marginTop: 24, padding: '0.75rem 2rem', fontSize: '1.1rem', background: '#FFC145', color: '#181c20', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
+              onClick={handlePlayAgain}
+              style={{ marginTop: 24, padding: '0.75rem 2rem', fontSize: '1.1rem', background: '#FFC145', color: '#181c20', border: 'none', borderRadius: 8, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+              disabled={loading}
             >
-              Play Again
+              {loading ? 'Loading...' : 'Forge Another'}
             </button>
           </div>
         </div>

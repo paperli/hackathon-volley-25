@@ -10,11 +10,11 @@ const GameRules = ({ onStart }) => {
   };
   return (
     <div className="overlay-card" style={{ textAlign: 'center', maxWidth: 400 }}>
+      <h1>⚒️</h1>
       <h1 className="overlay-text">Infinite Fusion</h1>
-      <h3>⚒️ Start Forging</h3>
       <p className="overlay-text"><strong>Infinite Fusion</strong> is a creative web scavenger game that turns your real-world environment into a playground for discovery and invention!</p>
       <button onClick={handleStart} style={{ padding: '0.75rem 2rem', fontSize: '1.1rem', marginTop: 16 }}>
-        Start Game
+      Start Forging
       </button>
     </div>
   );
