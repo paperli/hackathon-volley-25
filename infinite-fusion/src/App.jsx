@@ -116,11 +116,11 @@ function OverlayManager() {
               <div>
                 <h1 style={{ margin: '0.2em 0', fontSize: '2.6em', color: '#FFC145' }}>Nice Work!</h1>
                 <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
-                <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
+                <div className="overlay-text" style={{ marginTop: 4, marginBottom: 12, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
                   <b>{fusedName || "a new object"}</b>
                 </div>
                 {fusedImageUrl && (
-                  <div style={{ minHeight: 120, margin: '12px auto 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96 }}>
+                  <div style={{ minHeight: 120, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96 }}>
                     <img src={fusedImageUrl} alt={fusedName} style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent', position: 'absolute', top: 0, left: 0 }} />
                   </div>
                 )}

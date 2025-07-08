@@ -332,14 +332,14 @@ const TaskOverlay = () => {
             </div>
             <div className="overlay-text" style={{ marginTop: -8, fontSize: '1.1em', color: '#fff' }}>
               {failedCapability
-                ? `It can ${failedCapability}, but doesn't solve: ${currentTask?.description}`
+                ? `${failedCapability}, but doesn't solve: ${currentTask?.description}`
                 : "But it doesn't solve the current challenge!"}
             </div>
             <button
               onClick={() => setShowFailedModal(false)}
               style={{ marginTop: 24 }}
             >
-              Forge Again
+              Try Again
             </button>
           </div>
         </div>
