@@ -129,6 +129,8 @@ button {
   cursor: pointer;
   transition: border-color 0.25s, background 0.25s, color 0.25s;
   text-transform: uppercase;
+  min-height: 48px;
+  max-height: 48px;
 }
 button:hover {
   border-color: var(--color-primary-hover);

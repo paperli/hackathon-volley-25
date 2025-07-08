@@ -306,6 +306,10 @@ const TaskOverlay = () => {
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420, justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
+            <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
+              <b>{failedObjectName || "a new object"}</b>
+            </div>
             <div style={{ minHeight: 120, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
               {failedImageUrl && (
                 <img
@@ -326,11 +330,7 @@ const TaskOverlay = () => {
                 </div>
               )}
             </div>
-            <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
-            <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
-              <b>{failedObjectName || "a new object"}</b>
-            </div>
-            <div className="overlay-text" style={{ marginTop: 12, fontSize: '1.1em', color: '#fff' }}>
+            <div className="overlay-text" style={{ marginTop: 0, fontSize: '1.1em', color: '#fff' }}>
               {failedCapability
                 ? `It can ${failedCapability}, but doesn't solve: ${currentTask?.description}`
                 : "But it doesn't solve the current challenge!"}

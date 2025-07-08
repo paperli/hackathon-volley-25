@@ -14,33 +14,6 @@ function OverlayManager() {
   const [scoreExpanded, setScoreExpanded] = React.useState(false);
   const [fusedName, setFusedName] = React.useState("");
   const [fusedImageUrl, setFusedImageUrl] = React.useState("");
-  const [imageLoading, setImageLoading] = React.useState(false);
-
-  // Adjustable cheer message parameters
-  const cheerThresholds = [20, 40, 90];
-  const cheerIcons = ["🚀", "🔨", "🏅", "😴"];
-  const cheerMessages = [
-    "Blazing Fast!",
-    "Speedy Smith!",
-    "Solid Work!",
-    "You took your time..."
-  ];
-
-  function getCheerMessage(durationSec, thresholds = cheerThresholds, messages = cheerMessages) {
-    if (durationSec == null) return "Congratulations!";
-    for (let i = 0; i < thresholds.length; i++) {
-      if (durationSec < thresholds[i]) return messages[i];
-    }
-    return messages[messages.length - 1];
-  }
-
-  function getCheerIcon(durationSec, icons = cheerIcons) {
-    if (durationSec == null) return cheerIcons[0];
-    for (let i = 0; i < cheerThresholds.length; i++) {
-      if (durationSec < cheerThresholds[i]) return icons[i];
-    }
-    return icons[icons.length - 1];
-  }
 
   // New Play Again handler
   const handlePlayAgain = async () => {
@@ -92,7 +65,6 @@ function OverlayManager() {
   // Generate image when fusedName changes and gamePhase is 'end'
   React.useEffect(() => {
     if (state.gamePhase === 'end' && fusedName) {
-      setImageLoading(true);
       setFusedImageUrl("");
       fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
         method: 'POST',
@@ -104,7 +76,7 @@ function OverlayManager() {
           if (data.imageUrl) setFusedImageUrl(data.imageUrl);
         })
         .catch(() => setFusedImageUrl(""))
-        .finally(() => setImageLoading(false));
+        .finally(() => {});
     }
   }, [state.gamePhase, fusedName]);
 
@@ -129,8 +101,6 @@ function OverlayManager() {
     const durationSec = state.startTime && state.endTime ? Math.floor((state.endTime - state.startTime) / 1000) : null;
     const score = calculateScore();
     const objectCount = state.inventory.length;
-    // Find the last forged object
-    const lastForged = [...state.inventory].reverse().find(obj => obj.source === 'forged');
     // Calculate score breakdown for display
     const baseScore = objectCount * 1000;
     let speedBonus = 0;
@@ -141,30 +111,21 @@ function OverlayManager() {
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
-          <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
-            {/* Invented object image */}
-            <div style={{ minHeight: 120, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {imageLoading ? (
-                <div style={{ width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="48" height="48" viewBox="0 0 50 50" style={{ display: 'block', margin: 'auto' }}>
-                    <circle cx="25" cy="25" r="20" fill="none" stroke="#FFC145" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
-                      <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
-                    </circle>
-                  </svg>
-                </div>
-              ) : fusedImageUrl ? (
-                <img src={fusedImageUrl} alt={fusedName} style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent' }} />
-              ) : null}
-            </div>
-            {/* Forged object and task description */}
+          <div className="overlay-card" style={{ textAlign: 'center', maxWidth: 420 }}>
             {lastTask && (
-              <div style={{ margin: '18px 0' }}>
+              <div>
+                <h1 style={{ margin: '0.2em 0', fontSize: '2.6em', color: '#FFC145' }}>Nice Work!</h1>
                 <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
                 <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
                   <b>{fusedName || "a new object"}</b>
                 </div>
+                {fusedImageUrl && (
+                  <div style={{ minHeight: 120, margin: '12px auto 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96 }}>
+                    <img src={fusedImageUrl} alt={fusedName} style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent', position: 'absolute', top: 0, left: 0 }} />
+                  </div>
+                )}
                 {/* Score Collapse Menu (moved here) */}
-                <div style={{ margin: '16px 0' }}>
+                <div style={{ margin: 0 }}>
                   <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em' }}>
@@ -212,12 +173,12 @@ function OverlayManager() {
                     )}
                   </div>
                 </div>
-                <div className="overlay-text" style={{ marginTop: 8, fontSize: '1.1em', color: '#fff' }}>
+                <div className="overlay-text" style={{ marginTop: 16, marginBottom: 0, fontSize: '1.1em', color: '#fff' }}>
                   {`That solves: ${lastTask.description}`}
                 </div>
                 <button
                   onClick={handleShare}
-                  style={{ marginTop: 16 }}
+                  style={{ marginTop: 16, marginBottom: 8 }}
                   aria-label="Share your invention"
                 >
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
