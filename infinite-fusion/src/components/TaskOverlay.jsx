@@ -330,7 +330,7 @@ const TaskOverlay = () => {
                 </div>
               )}
             </div>
-            <div className="overlay-text" style={{ marginTop: 0, fontSize: '1.1em', color: '#fff' }}>
+            <div className="overlay-text" style={{ marginTop: -8, fontSize: '1.1em', color: '#fff' }}>
               {failedCapability
                 ? `It can ${failedCapability}, but doesn't solve: ${currentTask?.description}`
                 : "But it doesn't solve the current challenge!"}

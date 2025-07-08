@@ -128,7 +128,7 @@ function OverlayManager() {
                 <div style={{ margin: 0 }}>
                   <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em' }}>
+                      <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em', flex: 1, textAlign: 'center' }}>
                         Score: {score}
                       </div>
                       <button
@@ -141,7 +141,8 @@ function OverlayManager() {
                           padding: 4,
                           display: 'flex',
                           alignItems: 'center',
-                          transition: 'transform 0.2s ease'
+                          transition: 'transform 0.2s ease',
+                          marginLeft: 8
                         }}
                         aria-label={scoreExpanded ? 'Collapse score details' : 'Expand score details'}
                       >
