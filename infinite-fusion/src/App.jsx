@@ -11,6 +11,7 @@ function OverlayManager() {
   const { state, setGamePhase, setTasks, setStartTime, setEndTime, calculateScore } = useGame();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [scoreExpanded, setScoreExpanded] = React.useState(false);
 
   // Adjustable cheer message parameters
   const cheerThresholds = [20, 40, 90];
@@ -105,15 +106,49 @@ function OverlayManager() {
             
             {/* Score Display */}
             <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px', margin: '16px 0' }}>
-              <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em', marginBottom: 8 }}>
-                Score: {score}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em' }}>
+                  Score: {score}
+                </div>
+                <button
+                  onClick={() => setScoreExpanded(!scoreExpanded)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#FFC145',
+                    cursor: 'pointer',
+                    padding: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'transform 0.2s ease'
+                  }}
+                >
+                  <svg 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    style={{ 
+                      transform: scoreExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease'
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
               </div>
-              <div style={{ fontSize: '0.9em', color: '#ccc', textAlign: 'left' }}>
-                <div>Objects: {objectCount} × 1000 = {baseScore}</div>
-                <div>Time: {durationSec}s</div>
-                <div>Speed Bonus: +{speedBonus}</div>
-                <div>Failed Attempts: -{penalty}</div>
-              </div>
+              {scoreExpanded && (
+                <div style={{ fontSize: '0.9em', color: '#ccc', textAlign: 'left', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                  <div>Objects: {objectCount} × 1000 = {baseScore}</div>
+                  <div>Time: {durationSec}s</div>
+                  <div>Speed Bonus: +{speedBonus}</div>
+                  <div>Failed Attempts: -{penalty}</div>
+                </div>
+              )}
             </div>
             {lastTask && (
               <div style={{ margin: '18px 0' }}>
@@ -124,7 +159,7 @@ function OverlayManager() {
             {error && <div style={{ color: '#ff4d4f', marginTop: 12 }}>{error}</div>}
             <button
               onClick={handlePlayAgain}
-              style={{ marginTop: 24, padding: '0.75rem 2rem', fontSize: '1.1rem', background: '#FFC145', color: '#181c20', border: 'none', borderRadius: 8, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+              style={{ marginTop: 4, padding: '0.75rem 2rem', fontSize: '1.1rem', background: '#FFC145', color: '#181c20', border: 'none', borderRadius: 8, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
               disabled={loading}
             >
               {loading ? 'Loading...' : 'Forge Another'}
