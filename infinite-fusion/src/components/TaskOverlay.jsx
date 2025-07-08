@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
@@ -212,14 +212,15 @@ const TaskOverlay = () => {
           imageUrl = imgData.imageUrl || "";
         }
         setFailedImageUrl(imageUrl);
+        // Do NOT set setFailedLoading(false) here!
       } catch (err) {
         console.error("Error fetching fusion meta/image", err);
         setFailedObjectName("");
         setFailedCapability("");
         setFailedImageUrl("");
-      } finally {
-        setFailedLoading(false);
+        setFailedLoading(false); // Only set loading to false on error
       }
+      // No finally block for loading state
       return;
       // (old logic, now replaced)
       // const fusionName = getCreativeFusionName(captures[0].object.name, captures[1].object.name);
@@ -291,24 +292,39 @@ const TaskOverlay = () => {
   };
 
   // Failed Forge Modal
+  const prevImageUrl = useRef("");
+  useEffect(() => {
+    if (failedImageUrl && failedImageUrl !== prevImageUrl.current) {
+      console.log("New image URL detected, setting loading true:", failedImageUrl);
+      setFailedLoading(true);
+      prevImageUrl.current = failedImageUrl;
+    }
+  }, [failedImageUrl]);
   const FailedForgeModal = () => {
-    console.log("Rendering failed modal, failedImageUrl:", failedImageUrl);
+    console.log("Rendering failed modal, failedImageUrl:", failedImageUrl, "failedLoading:", failedLoading);
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
-          <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
-            <div style={{ minHeight: 120, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {failedLoading ? (
-                <div style={{ width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420, justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ minHeight: 120, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
+              {failedImageUrl && (
+                <img
+                  src={failedImageUrl}
+                  alt={failedObjectName}
+                  style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent', position: 'absolute', top: 0, left: 0 }}
+                  onLoad={() => { console.log('Image loaded', failedImageUrl); setFailedLoading(false); }}
+                  onError={() => { console.log('Image error', failedImageUrl); setFailedLoading(false); }}
+                />
+              )}
+              {failedLoading && (
+                <div style={{ width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 0, left: 0, zIndex: 2, background: 'rgba(0,0,0,0.1)' }}>
                   <svg width="48" height="48" viewBox="0 0 50 50" style={{ display: 'block', margin: 'auto' }}>
                     <circle cx="25" cy="25" r="20" fill="none" stroke="#FFC145" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
                       <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
                     </circle>
                   </svg>
                 </div>
-              ) : failedImageUrl ? (
-                <img src={failedImageUrl} alt={failedObjectName} style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent' }} />
-              ) : null}
+              )}
             </div>
             <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
             <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
