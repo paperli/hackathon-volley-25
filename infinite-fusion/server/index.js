@@ -240,6 +240,68 @@ app.post('/generate-task', async (req, res) => {
   }
 });
 
+// POST /generate-image: expects { objectName }
+app.post('/generate-image', async (req, res) => {
+  const { objectName } = req.body;
+  if (!objectName) {
+    return res.status(400).json({ error: 'objectName is required' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  const prompt = `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles.`;
+  try {
+    // Use OpenAI DALL·E 3 for image generation
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt,
+      n: 1,
+      size: '1024x1024',
+      response_format: 'url',
+      style: 'vivid',
+    });
+    const imageUrl = response.data[0]?.url;
+    if (!imageUrl) {
+      return res.status(500).json({ error: 'No image URL returned from OpenAI.' });
+    }
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('OpenAI image generation error:', err);
+    res.status(500).json({ error: 'Failed to generate image with OpenAI.' });
+  }
+});
+
+// POST /generate-capability: expects { objectName }
+app.post('/generate-capability', async (req, res) => {
+  const { objectName } = req.body;
+  if (!objectName) {
+    return res.status(400).json({ error: 'objectName is required' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  const prompt = `In one short sentence, describe a fun, whimsical, or surprising capability for an invented object called "${objectName}". Do not mention the name again in the sentence. Example: "It can turn socks into sandwiches."`;
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 40,
+    });
+    const capability = response.choices[0]?.message?.content?.trim();
+    if (!capability) {
+      return res.status(500).json({ error: 'No capability returned from OpenAI.' });
+    }
+    res.json({ capability });
+  } catch (err) {
+    console.error('OpenAI capability generation error:', err);
+    res.status(500).json({ error: 'Failed to generate capability with OpenAI.' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 }); 
