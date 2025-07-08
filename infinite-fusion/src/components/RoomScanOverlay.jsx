@@ -23,7 +23,7 @@ function useDotDotDot(active = true, intervalMs = 400) {
   return '.'.repeat(dots);
 }
 
-const RoomScanOverlay = () => {
+const RoomScanOverlay = ({ setFusedName }) => {
   const { videoRef } = useCameraStream();
   const { setRoomScanImages, setInventory, setGamePhase, setTasks } = useGame();
   const [captures, setCaptures] = useState([]); // { image }
@@ -96,6 +96,7 @@ const RoomScanOverlay = () => {
           if (result.task) {
             setTasks([result.task]);
             setGamePhase("task");
+            if (setFusedName) setFusedName(result.fusedName || "");
           } else {
             setError(result.error || "Failed to generate task.");
           }

@@ -12,6 +12,7 @@ function OverlayManager() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [scoreExpanded, setScoreExpanded] = React.useState(false);
+  const [fusedName, setFusedName] = React.useState("");
 
   // Adjustable cheer message parameters
   const cheerThresholds = [20, 40, 90];
@@ -56,6 +57,7 @@ function OverlayManager() {
         setStartTime(Date.now());
         setEndTime(undefined);
         setGamePhase("task");
+        setFusedName(result.fusedName || "");
       } else {
         setError(result.error || "Failed to generate new task.");
       }
@@ -76,7 +78,7 @@ function OverlayManager() {
     );
   }
   if (state.gamePhase === "scan") {
-    return <RoomScanOverlay />;
+    return <RoomScanOverlay setFusedName={setFusedName} />;
   }
   if (state.gamePhase === "task") {
     return <TaskOverlay />;
@@ -87,7 +89,8 @@ function OverlayManager() {
     const durationSec = state.startTime && state.endTime ? Math.floor((state.endTime - state.startTime) / 1000) : null;
     const score = calculateScore();
     const objectCount = state.inventory.length;
-    
+    // Find the last forged object
+    const lastForged = [...state.inventory].reverse().find(obj => obj.source === 'forged');
     // Calculate score breakdown for display
     const baseScore = objectCount * 1000;
     let speedBonus = 0;
@@ -95,7 +98,6 @@ function OverlayManager() {
     else if (durationSec && durationSec < 40) speedBonus = 250;
     else if (durationSec && durationSec < 90) speedBonus = 100;
     const penalty = state.failedAttempts * 100;
-    
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
@@ -103,7 +105,6 @@ function OverlayManager() {
             <h1 style={{ marginBottom: 0 }}>{getCheerIcon(durationSec)}</h1>
             <h1 className="game-title overlay-text">{getCheerMessage(durationSec)}</h1>
             <p className="overlay-text" style={{ fontWeight: 500, fontSize: '1.2em' }}>You completed the forging challenge!</p>
-            
             {/* Score Display */}
             <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px', margin: '16px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -150,10 +151,16 @@ function OverlayManager() {
                 </div>
               )}
             </div>
+            {/* Forged object and task description */}
             {lastTask && (
               <div style={{ margin: '18px 0' }}>
-                <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>Task:</div>
-                <div className="overlay-text" style={{ marginTop: 4 }}>{lastTask.description}</div>
+                <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
+                <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
+                  <b>{fusedName || "a new object"}</b>
+                </div>
+                <div className="overlay-text" style={{ marginTop: 8, fontSize: '1.1em', color: '#fff' }}>
+                  {`That solves: ${lastTask.description}`}
+                </div>
               </div>
             )}
             {error && <div style={{ color: '#ff4d4f', marginTop: 12 }}>{error}</div>}
