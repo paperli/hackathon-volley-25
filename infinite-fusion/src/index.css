@@ -22,7 +22,7 @@
   --font-size-xxl: 3.2em;
 
   /* Font Family */
-  --font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-family: "National Park", system-ui, Avenir, Helvetica, Arial, sans-serif;
 
   /* Spacing */
   --space-xs: 0.25rem;
@@ -79,7 +79,8 @@ body {
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: var(--space-md);
+  /* padding: var(--space-md); */
+  padding: 0;
   text-align: center;
 }
 
@@ -93,14 +94,25 @@ a:hover {
 }
 
 h1 {
+  font-family: "Bitcount Grid Double", var(--font-family);
   font-size: var(--font-size-xxl);
   line-height: 1.1;
+  margin-block-start: 0.3em;
+  margin-block-end: 0.3em;
 }
 h2 {
   font-size: var(--font-size-xl);
+  margin-block-start: 0.3em;
+  margin-block-end: 0.3em;
 }
 h3 {
   font-size: var(--font-size-lg);
+}
+
+p {
+  font-size: var(--font-size-md);
+  margin-block-start: 0.3em;
+  margin-block-end: 0.3em;
 }
 
 button {
@@ -160,4 +172,112 @@ button:focus-visible {
     color: var(--color-primary);
     border-color: var(--color-primary-hover);
   }
+}
+
+/* Overlay helpers */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.overlay-content {
+  position: absolute;
+  width: 100vw;
+  pointer-events: auto;
+}
+.overlay-bottom {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100vw;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  pointer-events: none;
+  padding-bottom: var(--space-lg);
+  z-index: 20;
+}
+.overlay-bottom > * {
+  pointer-events: auto;
+}
+.overlay-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Overlay text readability */
+.overlay-text, .overlay h1, .overlay h2, .overlay h3, .overlay p, .overlay label {
+  color: #fff !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+}
+
+/* Camera-style circular capture button */
+.capture-btn {
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  min-height: 72px;
+  max-width: 72px;
+  max-height: 72px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  outline: none;
+  font-size: 2rem;
+  color: #181c20;
+  margin: 0 16px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  padding: 0;
+}
+.capture-btn:active {
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+
+/* For icon inside the button */
+.capture-btn svg {
+  width: 36px;
+  height: 36px;
+  color: #181c20;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.remove-preview-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 1001;
+  padding: 0;
+}
+
+/* Overlay card for modals */
+.overlay-card {
+  background: rgba(24,28,32,0.85);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  padding: var(--space-lg);
+  color: #fff;
+  max-width: 90vw;
+  margin: 0 1rem;
 }

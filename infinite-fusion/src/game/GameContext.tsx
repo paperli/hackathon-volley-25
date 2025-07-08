@@ -3,38 +3,74 @@ import { GameObject, GameTask, GameState } from "./types";
 
 // Define the context value type
 interface GameContextType {
-  state: GameState;
+  state: GameState & {
+    roomScanImages: string[];
+    gamePhase: "rules" | "scan" | "task" | "end";
+    startTime?: number;
+    endTime?: number;
+    failedAttempts: number;
+    currentScore: number;
+  };
+  setRoomScanImages: (images: string[]) => void;
+  setInventory: (objects: GameObject[]) => void;
+  setGamePhase: (phase: "rules" | "scan" | "task" | "end") => void;
+  setStartTime: (t: number) => void;
+  setEndTime: (t: number) => void;
   addObject: (obj: GameObject) => void;
   forgeObjects: (ids: string[]) => void;
   completeTask: () => void;
   resetGame: () => void;
   setTasks: (tasks: GameTask[]) => void;
+  incrementFailedAttempts: () => void;
+  calculateScore: () => number;
 }
 
-const initialObjects: GameObject[] = [
-  { id: "chair", name: "Chair", source: "detected" },
-  { id: "table", name: "Table", source: "detected" },
-];
+const initialObjects: GameObject[] = [];
+const initialTasks: GameTask[] = [];
 
-const initialTasks: GameTask[] = [
-  {
-    id: "task-1",
-    description: "Forge a new object using a chair and a table.",
-    requirements: ["fused-chair-table"],
-    solved: false,
-  },
-];
-
-const initialState: GameState = {
+const initialState: GameState & {
+  roomScanImages: string[];
+  gamePhase: "rules" | "scan" | "task" | "end";
+  startTime?: number;
+  endTime?: number;
+  failedAttempts: number;
+  currentScore: number;
+} = {
   inventory: initialObjects,
   tasks: initialTasks,
   currentTaskIndex: 0,
+  roomScanImages: [],
+  gamePhase: "rules",
+  startTime: undefined,
+  endTime: undefined,
+  failedAttempts: 0,
+  currentScore: 0,
 };
 
 const GameContext = createContext(undefined as unknown as GameContextType | undefined);
 
 export const GameProvider = ({ children }: { children: any }) => {
   const [state, setState] = useState(initialState);
+
+  const setRoomScanImages = (images: string[]) => {
+    setState((prev) => ({ ...prev, roomScanImages: images }));
+  };
+
+  const setInventory = (objects: GameObject[]) => {
+    setState((prev) => ({ ...prev, inventory: objects }));
+  };
+
+  const setGamePhase = (phase: "rules" | "scan" | "task" | "end") => {
+    setState((prev) => ({ ...prev, gamePhase: phase }));
+  };
+
+  const setStartTime = (t: number) => {
+    setState((prev) => ({ ...prev, startTime: t }));
+  };
+
+  const setEndTime = (t: number) => {
+    setState((prev) => ({ ...prev, endTime: t }));
+  };
 
   // Add a new object to inventory (if not already present)
   const addObject = (obj: GameObject) => {
@@ -84,17 +120,60 @@ export const GameProvider = ({ children }: { children: any }) => {
     });
   };
 
+  const incrementFailedAttempts = () => {
+    setState((prev) => ({ ...prev, failedAttempts: prev.failedAttempts + 1 }));
+  };
+
+  const calculateScore = () => {
+    if (!state.startTime || !state.endTime) return 0;
+    
+    const N = state.inventory.length; // Number of objects
+    const T = Math.floor((state.endTime - state.startTime) / 1000); // Time in seconds
+    const failedAttempts = state.failedAttempts;
+    
+    // Base score: N * 1000
+    const base = N * 1000;
+    
+    // Speed bonus
+    let speedBonus = 0;
+    if (T < 20) speedBonus = 500;
+    else if (T < 40) speedBonus = 250;
+    else if (T < 90) speedBonus = 100;
+    
+    // Penalty for failed attempts
+    const penalty = failedAttempts * 100;
+    
+    // Final score
+    const score = Math.round((base / (T + 10)) + speedBonus - penalty);
+    
+    return Math.max(0, score); // Ensure score is not negative
+  };
+
   // Reset the game to initial state
   const resetGame = () => setState(initialState);
 
   // Set the list of tasks (for dynamic task generation)
   const setTasks = (tasks: GameTask[]) => {
-    setState((prev) => ({ ...prev, tasks, currentTaskIndex: 0 }));
+    setState((prev) => ({ ...prev, tasks, currentTaskIndex: 0, failedAttempts: 0 }));
   };
 
   return (
     <GameContext.Provider
-      value={{ state, addObject, forgeObjects, completeTask, resetGame, setTasks }}
+      value={{
+        state,
+        setRoomScanImages,
+        setInventory,
+        setGamePhase,
+        setStartTime,
+        setEndTime,
+        addObject,
+        forgeObjects,
+        completeTask,
+        resetGame,
+        setTasks,
+        incrementFailedAttempts,
+        calculateScore,
+      }}
     >
       {children}
     </GameContext.Provider>
