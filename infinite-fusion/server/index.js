@@ -250,16 +250,14 @@ app.post('/generate-image', async (req, res) => {
   if (!openaiApiKey) {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
-  const prompt = `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles.`;
+  const prompt = `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles. The object should be a single, complete object, not a combination of objects. Transparent background.`;
   try {
-    // Use OpenAI DALL·E 3 for image generation
+    // Use OpenAI gpt-image-1 for image generation
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt,
       n: 1,
       size: '1024x1024',
-      response_format: 'url',
-      style: 'vivid',
     });
     const imageUrl = response.data[0]?.url;
     if (!imageUrl) {

@@ -13,6 +13,8 @@ function OverlayManager() {
   const [error, setError] = React.useState("");
   const [scoreExpanded, setScoreExpanded] = React.useState(false);
   const [fusedName, setFusedName] = React.useState("");
+  const [fusedImageUrl, setFusedImageUrl] = React.useState("");
+  const [imageLoading, setImageLoading] = React.useState(false);
 
   // Adjustable cheer message parameters
   const cheerThresholds = [20, 40, 90];
@@ -87,6 +89,25 @@ function OverlayManager() {
     }
   };
 
+  // Generate image when fusedName changes and gamePhase is 'end'
+  React.useEffect(() => {
+    if (state.gamePhase === 'end' && fusedName) {
+      setImageLoading(true);
+      setFusedImageUrl("");
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ objectName: fusedName })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.imageUrl) setFusedImageUrl(data.imageUrl);
+        })
+        .catch(() => setFusedImageUrl(""))
+        .finally(() => setImageLoading(false));
+    }
+  }, [state.gamePhase, fusedName]);
+
   if (state.gamePhase === "rules") {
     return (
       <div className="overlay">
@@ -121,54 +142,19 @@ function OverlayManager() {
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
-            <h1 style={{ marginBottom: 0 }}>{getCheerIcon(durationSec)}</h1>
-            <h1 className="game-title overlay-text">{getCheerMessage(durationSec)}</h1>
-            <p className="overlay-text" style={{ fontWeight: 500, fontSize: '1.2em' }}>You completed the forging challenge!</p>
-            {/* Score Display */}
-            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px', margin: '16px 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em' }}>
-                  Score: {score}
-                </div>
-                <button
-                  onClick={() => setScoreExpanded(!scoreExpanded)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#FFC145',
-                    cursor: 'pointer',
-                    padding: 4,
-                    display: 'flex',
-                    alignItems: 'center',
-                    transition: 'transform 0.2s ease'
-                  }}
-                >
-                  <svg 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    style={{ 
-                      transform: scoreExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s ease'
-                    }}
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
+            {/* Invented object image */}
+            <div style={{ minHeight: 120, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {imageLoading ? (
+                <div style={{ width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="48" height="48" viewBox="0 0 50 50" style={{ display: 'block', margin: 'auto' }}>
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#FFC145" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
+                      <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+                    </circle>
                   </svg>
-                </button>
-              </div>
-              {scoreExpanded && (
-                <div style={{ fontSize: '0.9em', color: '#ccc', textAlign: 'left', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                  <div>Objects: {objectCount} × 1000 = {baseScore}</div>
-                  <div>Time: {durationSec}s</div>
-                  <div>Speed Bonus: +{speedBonus}</div>
-                  <div>Failed Attempts: -{penalty}</div>
                 </div>
-              )}
+              ) : fusedImageUrl ? (
+                <img src={fusedImageUrl} alt={fusedName} style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent' }} />
+              ) : null}
             </div>
             {/* Forged object and task description */}
             {lastTask && (
@@ -176,6 +162,55 @@ function OverlayManager() {
                 <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
                 <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
                   <b>{fusedName || "a new object"}</b>
+                </div>
+                {/* Score Collapse Menu (moved here) */}
+                <div style={{ margin: '16px 0' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em' }}>
+                        Score: {score}
+                      </div>
+                      <button
+                        onClick={() => setScoreExpanded(!scoreExpanded)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#FFC145',
+                          cursor: 'pointer',
+                          padding: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                          transition: 'transform 0.2s ease'
+                        }}
+                        aria-label={scoreExpanded ? 'Collapse score details' : 'Expand score details'}
+                      >
+                        <svg 
+                          width="20" 
+                          height="20" 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                          style={{ 
+                            transform: scoreExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease'
+                          }}
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                    {scoreExpanded && (
+                      <div style={{ fontSize: '0.9em', color: '#ccc', textAlign: 'left', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                        <div>Objects: {objectCount} × 1000 = {baseScore}</div>
+                        <div>Time: {durationSec}s</div>
+                        <div>Speed Bonus: +{speedBonus}</div>
+                        <div>Failed Attempts: -{penalty}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="overlay-text" style={{ marginTop: 8, fontSize: '1.1em', color: '#fff' }}>
                   {`That solves: ${lastTask.description}`}
