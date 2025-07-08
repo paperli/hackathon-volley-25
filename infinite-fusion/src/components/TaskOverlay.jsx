@@ -184,45 +184,81 @@ const TaskOverlay = () => {
       setGamePhase("end");
     } else {
       incrementFailedAttempts();
-      const fusionName = getCreativeFusionName(captures[0].object.name, captures[1].object.name);
       setShowFailedModal(true);
-      setFailedObjectName(fusionName);
-      setFailedLoading(true);
-      setFailedImageUrl("");
+      setFailedObjectName("");
       setFailedCapability("");
-      // Fetch image and capability
+      setFailedImageUrl("");
+      setFailedLoading(true);
       try {
-        const [imgRes, capRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
+        // 1. Get fusionName and capability together
+        const metaRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-fusion-meta`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ baseNames: ids }),
+        });
+        const metaData = await metaRes.json();
+        const fusionName = metaData.fusionName || "";
+        setFailedObjectName(fusionName);
+        setFailedCapability(metaData.capability || "");
+        // 2. Get image for the fusionName
+        let imageUrl = "";
+        if (fusionName) {
+          const imgRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ objectName: fusionName }),
-          }),
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-capability`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ objectName: fusionName }),
-          }),
-        ]);
-        const imgData = await imgRes.json();
-        const capData = await capRes.json();
-        console.log("/generate-image response", imgData);
-        setFailedImageUrl(imgData.imageUrl || "");
-        setFailedCapability(capData.capability || "");
+          });
+          const imgData = await imgRes.json();
+          imageUrl = imgData.imageUrl || "";
+        }
+        setFailedImageUrl(imageUrl);
       } catch (err) {
-        console.error("Error fetching image/capability", err);
-        setFailedImageUrl("");
+        console.error("Error fetching fusion meta/image", err);
+        setFailedObjectName("");
         setFailedCapability("");
+        setFailedImageUrl("");
       } finally {
         setFailedLoading(false);
       }
       return;
-      setForgeError(`Those objects can't be forged for this task, but you created: ${fusionName}! Try again or experiment with more combinations!`);
-      setForgeDebug({
-        requirements: currentTask.requirements,
-        selected: [captures[0].object, captures[1].object],
-        fusionName,
-      });
+      // (old logic, now replaced)
+      // const fusionName = getCreativeFusionName(captures[0].object.name, captures[1].object.name);
+      // setShowFailedModal(true);
+      // setFailedObjectName(fusionName);
+      // setFailedLoading(true);
+      // setFailedImageUrl("");
+      // setFailedCapability("");
+      // // Fetch image and capability
+      // try {
+      //   const [imgRes, capRes] = await Promise.all([
+      //     fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
+      //       method: "POST",
+      //       headers: { "Content-Type": "application/json" },
+      //       body: JSON.stringify({ objectName: fusionName }),
+      //     }),
+      //     fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-capability`, {
+      //       method: "POST",
+      //       headers: { "Content-Type": "application/json" },
+      //       body: JSON.stringify({ objectName: fusionName }),
+      //     }),
+      //   ]);
+      //   const imgData = await imgRes.json();
+      //   const capData = await capRes.json();
+      //   setFailedImageUrl(imgData.imageUrl || "");
+      //   setFailedCapability(capData.capability || "");
+      // } catch {
+      //   setFailedImageUrl("");
+      //   setFailedCapability("");
+      // } finally {
+      //   setFailedLoading(false);
+      // }
+      // return;
+      // setForgeError(`Those objects can't be forged for this task, but you created: ${fusionName}! Try again or experiment with more combinations!`);
+      // setForgeDebug({
+      //   requirements: currentTask.requirements,
+      //   selected: [captures[0].object, captures[1].object],
+      //   fusionName,
+      // });
     }
   };
 
