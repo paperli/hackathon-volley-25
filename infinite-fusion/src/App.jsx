@@ -99,7 +99,7 @@ function OverlayManager() {
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
-            <h1>{getCheerIcon(durationSec)}</h1>
+            <h1 style={{ marginBottom: 0 }}>{getCheerIcon(durationSec)}</h1>
             <h1 className="game-title overlay-text">{getCheerMessage(durationSec)}</h1>
             <p className="overlay-text" style={{ fontWeight: 500, fontSize: '1.2em' }}>You completed the forging challenge!</p>
             
