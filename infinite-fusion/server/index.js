@@ -250,23 +250,26 @@ app.post('/generate-image', async (req, res) => {
   if (!openaiApiKey) {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
-  const prompt = `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles. The object should be a single, complete object, not a combination of objects. Transparent background.`;
   try {
     // Use OpenAI gpt-image-1 for image generation
     const response = await openai.images.generate({
       model: 'gpt-image-1',
-      prompt,
+      prompt: `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles.`,
       n: 1,
       size: '1024x1024',
+      background: 'transparent',
     });
-    const imageUrl = response.data[0]?.url;
+    let imageUrl = response.data[0]?.url;
+    if (!imageUrl && response.data[0]?.b64_json) {
+      imageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
+    }
     if (!imageUrl) {
       return res.status(500).json({ error: 'No image URL returned from OpenAI.' });
     }
     res.json({ imageUrl });
   } catch (err) {
     console.error('OpenAI image generation error:', err);
-    res.status(500).json({ error: 'Failed to generate image with OpenAI.' });
+    res.status(500).json({ error: 'Failed to generate image' });
   }
 });
 
