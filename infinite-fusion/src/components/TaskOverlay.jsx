@@ -313,18 +313,25 @@ const TaskOverlay = () => {
   function getRandomFailTitle() {
     return failTitles[Math.floor(Math.random() * failTitles.length)];
   }
+  // Store the chosen fail title in state so it doesn't change on every re-render
+  const [failTitle, setFailTitle] = useState("");
+  useEffect(() => {
+    if (showFailedModal) {
+      setFailTitle(getRandomFailTitle());
+    }
+  }, [showFailedModal]);
   const FailedForgeModal = () => {
     console.log("Rendering failed modal, failedImageUrl:", failedImageUrl, "failedLoading:", failedLoading);
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420, justifyContent: 'center', alignItems: 'center' }}>
-            <h2 className="overlay-text">{getRandomFailTitle()}</h2>
+            <h2 className="overlay-text">{failTitle}</h2>
             <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
-            <div className="overlay-text" style={{ marginTop: 4, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
+            <div className="overlay-text" style={{ marginTop: 4, marginBottom: 8, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
               <b>{failedObjectName || "a new object"}</b>
             </div>
-            <div style={{ minHeight: 120, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
+            <div style={{ minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
               {failedImageUrl && (
                 <img
                   src={failedImageUrl}
