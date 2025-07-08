@@ -303,6 +303,50 @@ app.post('/generate-capability', async (req, res) => {
   }
 });
 
+// POST /generate-fusion-meta: expects { baseNames: [a, b] }
+app.post('/generate-fusion-meta', async (req, res) => {
+  const { baseNames } = req.body;
+  if (!baseNames || !Array.isArray(baseNames) || baseNames.length !== 2) {
+    return res.status(400).json({ error: 'baseNames (array of two strings) is required' });
+  }
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+  try {
+    const prompt = `You are a creative game designer. Given the following two real-world objects: "${baseNames[0]}" and "${baseNames[1]}", invent a fun, creative fusion name for the new object, and write a whimsical one-sentence capability for it, make sure it's short and creative. Respond in JSON with keys 'fusionName' and 'capability'.`;
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.9,
+      max_tokens: 120,
+    });
+    const text = response.choices[0]?.message?.content || '';
+    let fusionName = '', capability = '';
+    try {
+      const json = JSON.parse(text);
+      fusionName = json.fusionName;
+      capability = json.capability;
+    } catch {
+      // fallback: try to extract from text
+      const match = text.match(/"fusionName"\s*:\s*"([^"]+)"/);
+      if (match) fusionName = match[1];
+      const capMatch = text.match(/"capability"\s*:\s*"([^"]+)"/);
+      if (capMatch) capability = capMatch[1];
+    }
+    if (!fusionName || !capability) {
+      return res.status(500).json({ error: 'Failed to parse fusionName or capability from OpenAI response', raw: text });
+    }
+    res.json({ fusionName, capability });
+  } catch (err) {
+    console.error('OpenAI fusion meta generation error:', err);
+    res.status(500).json({ error: 'Failed to generate fusion meta' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 }); 
