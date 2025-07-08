@@ -8,6 +8,8 @@ interface GameContextType {
     gamePhase: "rules" | "scan" | "task" | "end";
     startTime?: number;
     endTime?: number;
+    failedAttempts: number;
+    currentScore: number;
   };
   setRoomScanImages: (images: string[]) => void;
   setInventory: (objects: GameObject[]) => void;
@@ -19,6 +21,8 @@ interface GameContextType {
   completeTask: () => void;
   resetGame: () => void;
   setTasks: (tasks: GameTask[]) => void;
+  incrementFailedAttempts: () => void;
+  calculateScore: () => number;
 }
 
 const initialObjects: GameObject[] = [];
@@ -29,6 +33,8 @@ const initialState: GameState & {
   gamePhase: "rules" | "scan" | "task" | "end";
   startTime?: number;
   endTime?: number;
+  failedAttempts: number;
+  currentScore: number;
 } = {
   inventory: initialObjects,
   tasks: initialTasks,
@@ -37,6 +43,8 @@ const initialState: GameState & {
   gamePhase: "rules",
   startTime: undefined,
   endTime: undefined,
+  failedAttempts: 0,
+  currentScore: 0,
 };
 
 const GameContext = createContext(undefined as unknown as GameContextType | undefined);
@@ -112,12 +120,41 @@ export const GameProvider = ({ children }: { children: any }) => {
     });
   };
 
+  const incrementFailedAttempts = () => {
+    setState((prev) => ({ ...prev, failedAttempts: prev.failedAttempts + 1 }));
+  };
+
+  const calculateScore = () => {
+    if (!state.startTime || !state.endTime) return 0;
+    
+    const N = state.inventory.length; // Number of objects
+    const T = Math.floor((state.endTime - state.startTime) / 1000); // Time in seconds
+    const failedAttempts = state.failedAttempts;
+    
+    // Base score: N * 1000
+    const base = N * 1000;
+    
+    // Speed bonus
+    let speedBonus = 0;
+    if (T < 20) speedBonus = 500;
+    else if (T < 40) speedBonus = 250;
+    else if (T < 90) speedBonus = 100;
+    
+    // Penalty for failed attempts
+    const penalty = failedAttempts * 100;
+    
+    // Final score
+    const score = Math.round((base / (T + 10)) + speedBonus - penalty);
+    
+    return Math.max(0, score); // Ensure score is not negative
+  };
+
   // Reset the game to initial state
   const resetGame = () => setState(initialState);
 
   // Set the list of tasks (for dynamic task generation)
   const setTasks = (tasks: GameTask[]) => {
-    setState((prev) => ({ ...prev, tasks, currentTaskIndex: 0 }));
+    setState((prev) => ({ ...prev, tasks, currentTaskIndex: 0, failedAttempts: 0 }));
   };
 
   return (
@@ -134,6 +171,8 @@ export const GameProvider = ({ children }: { children: any }) => {
         completeTask,
         resetGame,
         setTasks,
+        incrementFailedAttempts,
+        calculateScore,
       }}
     >
       {children}

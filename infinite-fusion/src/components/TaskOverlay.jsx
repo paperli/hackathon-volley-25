@@ -64,7 +64,7 @@ function useDotDotDot(active = true, intervalMs = 400) {
 
 const TaskOverlay = () => {
   const { videoRef } = useCameraStream();
-  const { state, setGamePhase, setEndTime, setStartTime, completeTask, setTasks } = useGame();
+  const { state, setGamePhase, setEndTime, setStartTime, completeTask, setTasks, incrementFailedAttempts } = useGame();
   const [captures, setCaptures] = useState([null, null]); // [{ image, object }, { image, object }]
   const [activeIdx, setActiveIdx] = useState(0); // 0 or 1
   const [analyzing, setAnalyzing] = useState(false);
@@ -176,6 +176,7 @@ const TaskOverlay = () => {
       setEndTime(Date.now());
       setGamePhase("end");
     } else {
+      incrementFailedAttempts();
       const fusionName = getCreativeFusionName(captures[0].object.name, captures[1].object.name);
       setForgeError(`Those objects can't be forged for this task, but you created: ${fusionName}! Try again or experiment with more combinations!`);
       setForgeDebug({

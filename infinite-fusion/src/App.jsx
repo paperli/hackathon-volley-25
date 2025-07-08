@@ -8,7 +8,7 @@ import RoomScanOverlay from "./components/RoomScanOverlay";
 import TaskOverlay from "./components/TaskOverlay";
 
 function OverlayManager() {
-  const { state, setGamePhase, setTasks, setStartTime, setEndTime } = useGame();
+  const { state, setGamePhase, setTasks, setStartTime, setEndTime, calculateScore } = useGame();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -84,18 +84,37 @@ function OverlayManager() {
     // Game End overlay
     const lastTask = state.tasks[state.currentTaskIndex] || state.tasks[state.currentTaskIndex - 1];
     const durationSec = state.startTime && state.endTime ? Math.floor((state.endTime - state.startTime) / 1000) : null;
+    const score = calculateScore();
+    const objectCount = state.inventory.length;
+    
+    // Calculate score breakdown for display
+    const baseScore = objectCount * 1000;
+    let speedBonus = 0;
+    if (durationSec && durationSec < 20) speedBonus = 500;
+    else if (durationSec && durationSec < 40) speedBonus = 250;
+    else if (durationSec && durationSec < 90) speedBonus = 100;
+    const penalty = state.failedAttempts * 100;
+    
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420 }}>
             <h1>{getCheerIcon(durationSec)}</h1>
-            <h1 className="overlay-text">{getCheerMessage(durationSec)}</h1>
+            <h1 className="game-title overlay-text">{getCheerMessage(durationSec)}</h1>
             <p className="overlay-text" style={{ fontWeight: 500, fontSize: '1.2em' }}>You completed the forging challenge!</p>
-            {durationSec !== null && (
-              <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em', margin: '12px 0' }}>
-                Time taken: {durationSec} seconds
+            
+            {/* Score Display */}
+            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px', margin: '16px 0' }}>
+              <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em', marginBottom: 8 }}>
+                Score: {score}
               </div>
-            )}
+              <div style={{ fontSize: '0.9em', color: '#ccc', textAlign: 'left' }}>
+                <div>Objects: {objectCount} × 1000 = {baseScore}</div>
+                <div>Time: {durationSec}s</div>
+                <div>Speed Bonus: +{speedBonus}</div>
+                <div>Failed Attempts: -{penalty}</div>
+              </div>
+            </div>
             {lastTask && (
               <div style={{ margin: '18px 0' }}>
                 <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>Task:</div>
