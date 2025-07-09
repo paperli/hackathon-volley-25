@@ -47,7 +47,7 @@ const FailedForgeModal = ({
           </div>
           <button
             onClick={onClose}
-            style={{ marginTop: 24 }}
+            style={{ marginTop: 24, marginBottom: 8 }}
           >
             Try Again
           </button>

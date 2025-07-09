@@ -180,6 +180,7 @@ const TaskOverlay = () => {
       setGamePhase("end");
     } else {
       incrementFailedAttempts();
+      // Show modal immediately with loading spinner and fail title
       setFailedModalState({
         show: true,
         objectName: "",
@@ -189,6 +190,7 @@ const TaskOverlay = () => {
         failTitle: getRandomFailTitle()
       });
       try {
+        // Fetch fusion meta (name and capability) first
         const metaRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-fusion-meta`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -196,23 +198,34 @@ const TaskOverlay = () => {
         });
         const metaData = await metaRes.json();
         const fusionName = metaData.fusionName || "";
-        let imageUrl = "";
-        if (fusionName) {
-          const imgRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ objectName: fusionName }),
-          });
-          const imgData = await imgRes.json();
-          imageUrl = imgData.imageUrl || "";
-        }
+        // Update modal with name and capability immediately
         setFailedModalState(prev => ({
           ...prev,
           objectName: fusionName,
           capability: metaData.capability || "",
-          imageUrl,
-          // loading stays true until image loads
+          // keep loading true, imageUrl still empty
         }));
+        // Fetch image in parallel (after name/capability update)
+        if (fusionName) {
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ objectName: fusionName }),
+          })
+            .then(res => res.json())
+            .then(imgData => {
+              setFailedModalState(prev => ({
+                ...prev,
+                imageUrl: imgData.imageUrl || "",
+                // loading stays true until image loads in <img>
+              }));
+            })
+            .catch(() => {
+              setFailedModalState(prev => ({ ...prev, imageUrl: "", loading: false }));
+            });
+        } else {
+          setFailedModalState(prev => ({ ...prev, imageUrl: "", loading: false }));
+        }
       } catch (err) {
         console.error("Error fetching fusion meta/image", err);
         setFailedModalState(prev => ({
