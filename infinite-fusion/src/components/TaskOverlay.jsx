@@ -1,29 +1,9 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 
 const ANSWER_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-answer`;
 const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
-
-// Generate a creative fusion name from two object names
-function getCreativeFusionName(a, b) {
-  const templates = [
-    `${a}${b.slice(0, 2)}`,
-    `${b}${a.slice(0, 2)}`,
-    `The ${a}${b}`,
-    `${a}-${b} 3000`,
-    `Mega${a}${b}`,
-    `${a}${b}inator`,
-    `Ultra ${a} ${b}`,
-    `The ${a} of ${b}`,
-    `${a}${b}`.replace(/(.)([A-Z])/g, '$1 $2'),
-    `${a}${b}`.toLowerCase(),
-    `${a}${b}`.toUpperCase(),
-    `${a}${b}`.split('').reverse().join(''),
-    `${a}${b}`.replace(/[aeiou]/gi, ''),
-  ];
-  return templates[Math.floor(Math.random() * templates.length)];
-}
 
 // Fuzzy match two strings based on shared tokens
 function fuzzyMatch(a, b) {
@@ -84,6 +64,15 @@ const TaskOverlay = () => {
   const [failedImageUrl, setFailedImageUrl] = useState("");
   const [failedCapability, setFailedCapability] = useState("");
   const [failedLoading, setFailedLoading] = useState(false);
+
+  // Helper to reset all failed modal state
+  const resetFailedModal = () => {
+    setShowFailedModal(false);
+    setFailedObjectName("");
+    setFailedImageUrl("");
+    setFailedCapability("");
+    setFailedLoading(false);
+  };
 
   const currentTask = state.tasks[state.currentTaskIndex];
   const inventoryNames = state.inventory.map(obj => obj.name);
@@ -175,6 +164,8 @@ const TaskOverlay = () => {
 
   const handleForge = async () => {
     setForgeError(null);
+    // Prevent running if modal is already open and loading
+    if (showFailedModal && failedLoading) return;
     if (!captures[0] || !captures[1]) return;
     const ids = [captures[0].object.name, captures[1].object.name];
     // Fuzzy match selected objects to requirements (order-insensitive, one-to-one)
@@ -222,44 +213,6 @@ const TaskOverlay = () => {
       }
       // No finally block for loading state
       return;
-      // (old logic, now replaced)
-      // const fusionName = getCreativeFusionName(captures[0].object.name, captures[1].object.name);
-      // setShowFailedModal(true);
-      // setFailedObjectName(fusionName);
-      // setFailedLoading(true);
-      // setFailedImageUrl("");
-      // setFailedCapability("");
-      // // Fetch image and capability
-      // try {
-      //   const [imgRes, capRes] = await Promise.all([
-      //     fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
-      //       method: "POST",
-      //       headers: { "Content-Type": "application/json" },
-      //       body: JSON.stringify({ objectName: fusionName }),
-      //     }),
-      //     fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-capability`, {
-      //       method: "POST",
-      //       headers: { "Content-Type": "application/json" },
-      //       body: JSON.stringify({ objectName: fusionName }),
-      //     }),
-      //   ]);
-      //   const imgData = await imgRes.json();
-      //   const capData = await capRes.json();
-      //   setFailedImageUrl(imgData.imageUrl || "");
-      //   setFailedCapability(capData.capability || "");
-      // } catch {
-      //   setFailedImageUrl("");
-      //   setFailedCapability("");
-      // } finally {
-      //   setFailedLoading(false);
-      // }
-      // return;
-      // setForgeError(`Those objects can't be forged for this task, but you created: ${fusionName}! Try again or experiment with more combinations!`);
-      // setForgeDebug({
-      //   requirements: currentTask.requirements,
-      //   selected: [captures[0].object, captures[1].object],
-      //   fusionName,
-      // });
     }
   };
 
@@ -291,15 +244,6 @@ const TaskOverlay = () => {
     }
   };
 
-  // Failed Forge Modal
-  const prevImageUrl = useRef("");
-  useEffect(() => {
-    if (failedImageUrl && failedImageUrl !== prevImageUrl.current) {
-      console.log("New image URL detected, setting loading true:", failedImageUrl);
-      setFailedLoading(true);
-      prevImageUrl.current = failedImageUrl;
-    }
-  }, [failedImageUrl]);
   // Copy variations for fail state title
   const failTitles = [
     'Not Quite There',
@@ -320,7 +264,18 @@ const TaskOverlay = () => {
       setFailTitle(getRandomFailTitle());
     }
   }, [showFailedModal]);
-  const FailedForgeModal = () => {
+
+  // Handler to set loading to false after image loads or errors
+  const handleFailedImageLoad = () => {
+    console.log("FailedForgeModal: image loaded");
+    setFailedLoading(false);
+  };
+  const handleFailedImageError = () => {
+    console.log("FailedForgeModal: image failed to load");
+    setFailedLoading(false);
+  };
+
+  const FailedForgeModal = ({ failTitle, failedObjectName, failedImageUrl, failedLoading, failedCapability, currentTask, onClose, onImageLoad, onImageError }) => {
     console.log("Rendering failed modal, failedImageUrl:", failedImageUrl, "failedLoading:", failedLoading);
     return (
       <div className="overlay">
@@ -337,8 +292,8 @@ const TaskOverlay = () => {
                   src={failedImageUrl}
                   alt={failedObjectName}
                   style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent', position: 'absolute', top: 0, left: 0 }}
-                  onLoad={() => { console.log('Image loaded', failedImageUrl); setFailedLoading(false); }}
-                  onError={() => { console.log('Image error', failedImageUrl); setFailedLoading(false); }}
+                  onLoad={onImageLoad}
+                  onError={onImageError}
                 />
               )}
               {failedLoading && (
@@ -357,7 +312,7 @@ const TaskOverlay = () => {
                 : "But it doesn't solve the current challenge!"}
             </div>
             <button
-              onClick={() => setShowFailedModal(false)}
+              onClick={onClose}
               style={{ marginTop: 24 }}
             >
               Try Again
@@ -370,7 +325,19 @@ const TaskOverlay = () => {
 
   return (
     <>
-      {showFailedModal && <FailedForgeModal />}
+      {showFailedModal && (
+        <FailedForgeModal
+          failTitle={failTitle}
+          failedObjectName={failedObjectName}
+          failedImageUrl={failedImageUrl}
+          failedLoading={failedLoading}
+          failedCapability={failedCapability}
+          currentTask={currentTask}
+          onClose={resetFailedModal}
+          onImageLoad={handleFailedImageLoad}
+          onImageError={handleFailedImageError}
+        />
+      )}
       <div className="overlay" style={showFailedModal ? { display: 'none' } : {}}>
         <div className="overlay-content overlay-center">
           <div className="overlay-card compact" style={{ textAlign: "center", maxWidth: 420 }}>

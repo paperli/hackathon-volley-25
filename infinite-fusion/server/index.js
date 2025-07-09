@@ -238,6 +238,7 @@ app.post('/generate-image', async (req, res) => {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
   try {
+    console.log(`[generate-image] Start generating image for: ${objectName}`);
     // Use OpenAI gpt-image-1 for image generation
     const response = await openai.images.generate({
       model: 'gpt-image-1',
@@ -251,11 +252,13 @@ app.post('/generate-image', async (req, res) => {
       imageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
     }
     if (!imageUrl) {
+      console.log(`[generate-image] Done (error: no image URL) for: ${objectName}`);
       return res.status(500).json({ error: 'No image URL returned from OpenAI.' });
     }
+    console.log(`[generate-image] Done generating image for: ${objectName}`);
     res.json({ imageUrl });
   } catch (err) {
-    console.error('OpenAI image generation error:', err);
+    console.error('[generate-image] Error generating image for:', objectName, err);
     res.status(500).json({ error: 'Failed to generate image' });
   }
 });
