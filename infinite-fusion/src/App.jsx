@@ -161,25 +161,25 @@ function OverlayManager() {
                 {/* Score Collapse Menu (moved here) */}
                 <div style={{ margin: 0 }}>
                   <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={scoreExpanded ? 'Collapse score details' : 'Expand score details'}
+                      onClick={() => setScoreExpanded(!scoreExpanded)}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setScoreExpanded(!scoreExpanded); } }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        userSelect: 'none',
+                      }}
+                    >
                       <div style={{ color: '#FFC145', fontWeight: 700, fontSize: '1.5em', flex: 1, textAlign: 'center' }}>
                         Score: {score}
                       </div>
-                      <button
-                        onClick={() => setScoreExpanded(!scoreExpanded)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#FFC145',
-                          cursor: 'pointer',
-                          padding: 4,
-                          display: 'flex',
-                          alignItems: 'center',
-                          transition: 'transform 0.2s ease',
-                          marginLeft: 8
-                        }}
-                        aria-label={scoreExpanded ? 'Collapse score details' : 'Expand score details'}
-                      >
+                      <span style={{ display: 'flex', alignItems: 'center', marginLeft: 8 }}>
                         <svg 
                           width="20" 
                           height="20" 
@@ -196,7 +196,7 @@ function OverlayManager() {
                         >
                           <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
-                      </button>
+                      </span>
                     </div>
                     {scoreExpanded && (
                       <div style={{ fontSize: '0.9em', color: '#ccc', textAlign: 'left', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
