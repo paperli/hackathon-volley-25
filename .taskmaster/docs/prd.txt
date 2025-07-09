@@ -1,0 +1,69 @@
+<context>
+# Overview
+Infinite Fusion is an interactive web game that transforms a player's real-world environment into a creative scavenger hunt using their device's camera. Players scan their room via a web browser, and the app uses advanced cloud AI (OpenAI or Gemini) to analyze images and detect movable objects. Players are challenged to combine ("forge") real objects to solve tasks, encouraging exploration, creativity, and competition—all accessible instantly from any modern device.
+
+# Core Features
+- **Web-Based Camera Room Scanning**: Players use their browser's camera to scan their room. The app captures images and sends them to OpenAI or Gemini APIs for analysis to detect movable objects.
+- **Game Setup & Rules Page**: Before starting, users see a web page explaining the game setup, rules, and privacy considerations.
+- **Cloud AI Object Detection & Tracking**: The system identifies and tracks objects that can be moved and used for forging, leveraging OpenAI or Gemini's image analysis capabilities.
+- **Forging Mechanic**: Players are given tasks that require combining two or more real objects to create a new, virtual object that solves a challenge. The app uses the camera and cloud AI to verify the objects and displays the forging result.
+- **Forged Object Library**: All created objects are listed. Players can continue forging by combining existing forged objects or new real objects.
+- **Task Progression**: The system checks if the current library of forged objects can solve the next task, encouraging iterative play.
+- **Game State Recording**: The app records time to finish, number of steps, and other stats to foster competitive gameplay.
+- **Competitive & Social Features**: (Future) Leaderboards, sharing, and multiplayer modes, all web-based.
+
+# User Experience
+- **Personas**: Kids, families, and casual gamers looking for creative, physical-digital play, accessible from any device with a camera and browser.
+- **Key Flows**:
+  1. User opens the web app, sees setup/rules page.
+  2. User scans room with browser camera; images are analyzed by OpenAI or Gemini to detect objects.
+  3. User receives a task (e.g., "Forge something that can scoop water").
+  4. User finds two objects, scans them, and forges them in-app (cloud AI verifies objects).
+  5. Forged object is added to library; user can forge further or solve new tasks.
+  6. Game tracks progress, time, and steps; results shown at end.
+- **UI/UX**: Simple onboarding, clear camera interface, visual feedback for object detection, fun forging animations, progress and stats display—all optimized for web.
+</context>
+<PRD>
+# Technical Architecture
+- **Frontend**: Web app built with React (or similar), using the MediaDevices API for camera access.
+- **Cloud AI Object Detection**: Captured images are sent to OpenAI or Gemini APIs for analysis. The response is used to identify and track movable objects in the room.
+- **Game Logic**: State management for tasks, object library, forging logic, and progress tracking, all in-browser.
+- **Backend**: Node.js/Express (or serverless functions) to proxy image uploads and interact with OpenAI or Gemini APIs. Optionally, use a cloud backend (e.g., Firebase, Supabase) for user stats, leaderboards, and game history.
+- **Data Models**: User, GameSession, Object, ForgedObject, Task, GameStats.
+- **APIs**: For cloud AI image analysis, multiplayer, sharing, and leaderboard features.
+
+# Development Roadmap
+- **MVP**:
+  - Web-based camera view and image capture
+  - Game setup/rules web page
+  - Integration with OpenAI or Gemini for object detection
+  - Task generation and display
+  - Forging mechanic (scan, combine, display result)
+  - Forged object library UI
+  - Game state tracking (time, steps, stats)
+- **Future Enhancements**:
+  - Multiplayer and social features (web-based)
+  - Advanced object recognition (semantic, not just bounding boxes)
+  - More complex tasks and forging recipes
+  - Leaderboards and sharing
+
+# Logical Dependency Chain
+1. Game setup/rules web page
+2. Web camera view and image capture
+3. Cloud AI object detection integration
+4. Task generation and display
+5. Forging mechanic and object library
+6. Game state tracking
+7. Competitive/social features (future)
+
+# Risks and Mitigations
+- **Cloud AI Latency/Cost**: Optimize image size and frequency of uploads; provide user feedback during analysis; monitor and manage API usage/costs.
+- **Object Detection Accuracy**: Use the latest OpenAI or Gemini models; allow manual override if detection fails.
+- **User Privacy**: Clearly communicate camera usage and cloud processing; anonymize and secure image uploads.
+- **Device Compatibility**: Test on major browsers and devices (desktop, tablet, mobile browsers).
+- **Game Complexity**: Start with simple forging and tasks; expand as system matures.
+
+# Appendix
+- **Research**: Review best practices for cloud-based image analysis and privacy.
+- **Technical Specs**: Use OpenAI Vision API or Gemini Vision API for object detection.
+</PRD> 
