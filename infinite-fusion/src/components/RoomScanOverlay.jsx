@@ -28,7 +28,6 @@ const RoomScanOverlay = ({ setFusedName }) => {
   const { setRoomScanImages, setInventory, setGamePhase, setTasks } = useGame();
   const [captures, setCaptures] = useState([]); // { image }
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzeProgress, setAnalyzeProgress] = useState(0);
   const [error, setError] = useState(null);
 
   const analyzingDots = useDotDotDot(analyzing);
@@ -49,41 +48,22 @@ const RoomScanOverlay = ({ setFusedName }) => {
     setCaptures((prev) => prev.filter((_, i) => i !== idx));
     setError(null);
     setAnalyzing(false);
-    setAnalyzeProgress(0);
   };
 
-  // Analyze images after all are captured
+  // Analyze images after all are captured (batch mode)
   const handleAnalyze = async () => {
     setAnalyzing(true);
-    setAnalyzeProgress(0);
     setError(null);
     try {
-      const results = await Promise.all(
-        captures.map(async (c) => {
-          try {
-            const response = await fetch(SCAN_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ image: c.image }),
-            });
-            const result = await response.json();
-            setAnalyzeProgress((p) => p + 1);
-            return result.objects || [];
-          } catch {
-            setAnalyzeProgress((p) => p + 1);
-            return [];
-          }
-        })
-      );
-      // Deduplicate objects by name
-      const allObjects = Array.from(
-        new Map(
-          results.flat().map((obj) => [obj.name, obj])
-        ).values()
-      );
+      const response = await fetch(SCAN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images: captures.map((c) => c.image) }),
+      });
+      const result = await response.json();
+      const allObjects = result.objects || [];
       setRoomScanImages(captures.map((c) => c.image));
       setInventory(allObjects);
-      // Generate a task using the detected objects
       if (allObjects.length >= 2) {
         const objectNames = allObjects.map(obj => obj.name);
         try {
@@ -144,8 +124,7 @@ const RoomScanOverlay = ({ setFusedName }) => {
           {error && <p className="overlay-text" style={{ color: "#ffb300" }}>{error}</p>}
           {analyzing && (
             <div style={{ marginTop: 24 }}>
-              <h3 className="overlay-text">Analyzing Photos{analyzingDots}</h3>
-              <p className="overlay-text">{analyzeProgress} / {NUM_CAPTURES}</p>
+              <h4 className="overlay-text">Analyzing Your Room{analyzingDots}</h4>
             </div>
           )}
         </div>

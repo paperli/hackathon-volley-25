@@ -32,9 +32,9 @@
   --space-xl: 3rem;
 
   /* Border Radius */
-  --radius: 8px;
-  --radius-sm: 4px;
-  --radius-lg: 16px;
+  --radius: 16px;
+  --radius-sm: 8px;
+  --radius-lg: 24px;
 
   /* Shadows */
   --shadow-card: 0 2px 8px rgba(255,193,69,0.08);

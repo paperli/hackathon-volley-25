@@ -17,92 +17,77 @@ const getRandomPair = (arr) => {
   return [shuffled[0], shuffled[1]];
 };
 
-// DEPRECATED: /analyze (use /analyze-scan or /analyze-answer)
-app.post('/analyze', async (req, res) => {
-  const { image, inventory } = req.body;
-  if (!image) {
-    return res.status(400).json({ error: 'No image provided' });
-  }
+// POST /analyze-scan: supports { image } (single) or { images: [...] } (batch)
+app.post('/analyze-scan', async (req, res) => {
+  const { image, images } = req.body;
   const openaiApiKey = process.env.OPENAI_API_KEY;
   if (!openaiApiKey) {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
-  console.log('Received image for analysis (length):', image.length);
-
-  try {
-    // Prepare the prompt for object detection
-    let prompt;
-    if (Array.isArray(inventory) && inventory.length > 0) {
-      prompt = `You are an object recognition assistant for a scavenger hunt game.\nGiven an image and a list of inventory objects, your task is to:\n- Identify if any object from the inventory is present in the image. If so, return the name of that object.\n- If none of the inventory objects are present, return the name of the most prominent movable object in the image.\n- Return only one object name per image.\nInventory: ${JSON.stringify(inventory)}\nRespond with a JSON object: {\"name\": <object name>, \"confidence\": <score 0-1>}`;
-    } else {
-      prompt = `List all MOVABLE objects you see in this image. For each object, provide a short name and a confidence score from 0 to 1. Return the result as a JSON array of objects with 'name' and 'confidence' fields. Only include objects that a person could reasonably pick up and move.`;
-    }
-
-    // Call OpenAI Vision API (GPT-4 Turbo with vision)
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: image } },
-          ],
-        },
-      ],
-      max_tokens: 500,
-    });
-
-    // Parse the response
-    const text = response.choices[0]?.message?.content;
-    let objects = [];
+  // BATCH MODE: Room scan (images array)
+  if (Array.isArray(images) && images.length > 0) {
     try {
-      if (Array.isArray(inventory) && inventory.length > 0) {
-        // Expect a single object in JSON: { name, confidence }
-        const match = text.match(/\{.*\}/s);
-        if (match) {
-          const obj = JSON.parse(match[0]);
-          if (obj && obj.name) {
-            objects = [obj];
-          } else {
-            objects = [];
-          }
-        } else {
-          objects = [];
-        }
-      } else {
-        // Try to extract the JSON array from the response
+      const prompt = `
+        You are an object recognition assistant for a scavenger hunt game.
+        Given ${images.length} images of a room, list all MOVABLE objects you see across ALL images. For each object, provide a short name and a confidence score from 0 to 1. Return the result as a JSON array of objects with 'name' and 'confidence' fields. Only include objects that a person could reasonably pick up and move.
+
+        When listing objects:
+        - If multiple images contain the same or very similar object (e.g., "water bottle" and "plastic water bottle"), merge them into a single object and use the simplest, most general name (e.g., "water bottle").
+        - Treat objects with different colors as distinct (e.g., "yellow clip" and "red clip" are different objects).
+        - Ignore plural forms—convert all object names to singular (e.g., "cables" becomes "cable").
+        - Merge synonyms and similar objects into a single canonical name.
+        - Use the most common or generic name for each object.
+        - Do not include duplicate or near-duplicate objects.
+        - If the same object appears in multiple images, only list it once.
+      `;
+      // Build OpenAI vision message with all images
+      const content = [
+        { type: 'text', text: prompt },
+        ...images.map(img => ({ type: 'image_url', image_url: { url: img } }))
+      ];
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'user', content },
+        ],
+        max_tokens: 700,
+      });
+      const text = response.choices[0]?.message?.content;
+      let objects = [];
+      try {
         const match = text.match(/\[.*\]/s);
         if (match) {
           objects = JSON.parse(match[0]);
         } else {
           objects = [];
         }
+        console.log('[analyze-scan] Batched scan detected inventory:', objects);
+      } catch (err) {
+        console.error('Failed to parse OpenAI response (batched scan):', err, text);
+        objects = [];
       }
+      return res.json({ objects, message: 'OpenAI Vision API result (batched scan).' });
     } catch (err) {
-      console.error('Failed to parse OpenAI response:', err, text);
-      objects = [];
+      console.error('OpenAI Vision API error (batched scan):', err);
+      return res.status(500).json({ error: 'Failed to analyze images with OpenAI Vision API.' });
     }
-
-    res.json({ objects, message: 'OpenAI Vision API result.' });
-  } catch (err) {
-    console.error('OpenAI Vision API error:', err);
-    res.status(500).json({ error: 'Failed to analyze image with OpenAI Vision API.' });
   }
-});
-
-// POST /analyze-scan: expects { image }
-app.post('/analyze-scan', async (req, res) => {
-  const { image } = req.body;
+  // SINGLE IMAGE: legacy scan
   if (!image) {
     return res.status(400).json({ error: 'No image provided' });
   }
-  const openaiApiKey = process.env.OPENAI_API_KEY;
-  if (!openaiApiKey) {
-    return res.status(500).json({ error: 'OpenAI API key not configured' });
-  }
   try {
-    const prompt = `List all MOVABLE objects you see in this image. For each object, provide a short name and a confidence score from 0 to 1. Return the result as a JSON array of objects with 'name' and 'confidence' fields. Only include objects that a person could reasonably pick up and move.`;
+    const prompt = `
+      List all MOVABLE objects you see in this image. For each object, provide a short name and a confidence score from 0 to 1. Return the result as a JSON array of objects with 'name' and 'confidence' fields. Only include objects that a person could reasonably pick up and move.
+
+      When listing objects:
+      - If multiple objects are the same or very similar (e.g., "water bottle" and "plastic water bottle"), merge them into a single object and use the simplest, most general name (e.g., "water bottle").
+      - Treat objects with different colors as distinct (e.g., "yellow clip" and "red clip" are different objects).
+      - Ignore plural forms—convert all object names to singular (e.g., "cables" becomes "cable").
+      - Merge synonyms and similar objects into a single canonical name.
+      - Use the most common or generic name for each object.
+      - Do not include duplicate or near-duplicate objects.
+    `;
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -125,6 +110,8 @@ app.post('/analyze-scan', async (req, res) => {
       } else {
         objects = [];
       }
+      // Debug log: print the detected inventory list (objects)
+      console.log('[analyze-scan] Detected inventory:', objects);
     } catch (err) {
       console.error('Failed to parse OpenAI response:', err, text);
       objects = [];
@@ -251,6 +238,7 @@ app.post('/generate-image', async (req, res) => {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
   try {
+    console.log(`[generate-image] Start generating image for: ${objectName}`);
     // Use OpenAI gpt-image-1 for image generation
     const response = await openai.images.generate({
       model: 'gpt-image-1',
@@ -264,11 +252,13 @@ app.post('/generate-image', async (req, res) => {
       imageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
     }
     if (!imageUrl) {
+      console.log(`[generate-image] Done (error: no image URL) for: ${objectName}`);
       return res.status(500).json({ error: 'No image URL returned from OpenAI.' });
     }
+    console.log(`[generate-image] Done generating image for: ${objectName}`);
     res.json({ imageUrl });
   } catch (err) {
-    console.error('OpenAI image generation error:', err);
+    console.error('[generate-image] Error generating image for:', objectName, err);
     res.status(500).json({ error: 'Failed to generate image' });
   }
 });
