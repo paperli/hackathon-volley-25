@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
+import FailedForgeModal from './FailedForgeModal';
 
 const ANSWER_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-answer`;
 const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
@@ -59,19 +60,25 @@ const TaskOverlay = () => {
   const analyzingDots = useDotDotDot(analyzing);
 
   // Failed forge modal state
-  const [showFailedModal, setShowFailedModal] = useState(false);
-  const [failedObjectName, setFailedObjectName] = useState("");
-  const [failedImageUrl, setFailedImageUrl] = useState("");
-  const [failedCapability, setFailedCapability] = useState("");
-  const [failedLoading, setFailedLoading] = useState(false);
+  const [failedModalState, setFailedModalState] = useState({
+    show: false,
+    objectName: "",
+    imageUrl: "",
+    capability: "",
+    loading: false,
+    failTitle: ""
+  });
 
   // Helper to reset all failed modal state
   const resetFailedModal = () => {
-    setShowFailedModal(false);
-    setFailedObjectName("");
-    setFailedImageUrl("");
-    setFailedCapability("");
-    setFailedLoading(false);
+    setFailedModalState({
+      show: false,
+      objectName: "",
+      imageUrl: "",
+      capability: "",
+      loading: false,
+      failTitle: ""
+    });
   };
 
   const currentTask = state.tasks[state.currentTaskIndex];
@@ -164,24 +171,24 @@ const TaskOverlay = () => {
 
   const handleForge = async () => {
     setForgeError(null);
-    // Prevent running if modal is already open and loading
-    if (showFailedModal && failedLoading) return;
+    if (failedModalState.show && failedModalState.loading) return;
     if (!captures[0] || !captures[1]) return;
     const ids = [captures[0].object.name, captures[1].object.name];
-    // Fuzzy match selected objects to requirements (order-insensitive, one-to-one)
     if (isFuzzyForge(ids, currentTask.requirements)) {
       completeTask();
       setEndTime(Date.now());
       setGamePhase("end");
     } else {
       incrementFailedAttempts();
-      setShowFailedModal(true);
-      setFailedObjectName("");
-      setFailedCapability("");
-      setFailedImageUrl("");
-      setFailedLoading(true);
+      setFailedModalState({
+        show: true,
+        objectName: "",
+        imageUrl: "",
+        capability: "",
+        loading: true,
+        failTitle: getRandomFailTitle()
+      });
       try {
-        // 1. Get fusionName and capability together
         const metaRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-fusion-meta`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -189,9 +196,6 @@ const TaskOverlay = () => {
         });
         const metaData = await metaRes.json();
         const fusionName = metaData.fusionName || "";
-        setFailedObjectName(fusionName);
-        setFailedCapability(metaData.capability || "");
-        // 2. Get image for the fusionName
         let imageUrl = "";
         if (fusionName) {
           const imgRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
@@ -202,16 +206,23 @@ const TaskOverlay = () => {
           const imgData = await imgRes.json();
           imageUrl = imgData.imageUrl || "";
         }
-        setFailedImageUrl(imageUrl);
-        // Do NOT set setFailedLoading(false) here!
+        setFailedModalState(prev => ({
+          ...prev,
+          objectName: fusionName,
+          capability: metaData.capability || "",
+          imageUrl,
+          // loading stays true until image loads
+        }));
       } catch (err) {
         console.error("Error fetching fusion meta/image", err);
-        setFailedObjectName("");
-        setFailedCapability("");
-        setFailedImageUrl("");
-        setFailedLoading(false); // Only set loading to false on error
+        setFailedModalState(prev => ({
+          ...prev,
+          objectName: "",
+          capability: "",
+          imageUrl: "",
+          loading: false
+        }));
       }
-      // No finally block for loading state
       return;
     }
   };
@@ -257,88 +268,32 @@ const TaskOverlay = () => {
   function getRandomFailTitle() {
     return failTitles[Math.floor(Math.random() * failTitles.length)];
   }
-  // Store the chosen fail title in state so it doesn't change on every re-render
-  const [failTitle, setFailTitle] = useState("");
-  useEffect(() => {
-    if (showFailedModal) {
-      setFailTitle(getRandomFailTitle());
-    }
-  }, [showFailedModal]);
-
   // Handler to set loading to false after image loads or errors
   const handleFailedImageLoad = () => {
     console.log("FailedForgeModal: image loaded");
-    setFailedLoading(false);
+    setFailedModalState(prev => ({ ...prev, loading: false }));
   };
   const handleFailedImageError = () => {
     console.log("FailedForgeModal: image failed to load");
-    setFailedLoading(false);
-  };
-
-  const FailedForgeModal = ({ failTitle, failedObjectName, failedImageUrl, failedLoading, failedCapability, currentTask, onClose, onImageLoad, onImageError }) => {
-    console.log("Rendering failed modal, failedImageUrl:", failedImageUrl, "failedLoading:", failedLoading);
-    return (
-      <div className="overlay">
-        <div className="overlay-content overlay-center">
-          <div className="overlay-card" style={{ textAlign: "center", maxWidth: 420, justifyContent: 'center', alignItems: 'center' }}>
-            <h2 className="overlay-text">{failTitle}</h2>
-            <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
-            <div className="overlay-text" style={{ marginTop: 4, marginBottom: 8, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
-              <b>{failedObjectName || "a new object"}</b>
-            </div>
-            <div style={{ minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
-              {failedImageUrl && (
-                <img
-                  src={failedImageUrl}
-                  alt={failedObjectName}
-                  style={{ width: 96, height: 96, objectFit: 'contain', background: 'transparent', position: 'absolute', top: 0, left: 0 }}
-                  onLoad={onImageLoad}
-                  onError={onImageError}
-                />
-              )}
-              {failedLoading && (
-                <div style={{ width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 0, left: 0, zIndex: 2, background: 'rgba(0,0,0,0.1)' }}>
-                  <svg width="48" height="48" viewBox="0 0 50 50" style={{ display: 'block', margin: 'auto' }}>
-                    <circle cx="25" cy="25" r="20" fill="none" stroke="#FFC145" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
-                      <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
-                    </circle>
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div className="overlay-text" style={{ marginTop: -8, fontSize: '1.1em', color: '#fff' }}>
-              {failedCapability
-                ? `${failedCapability}, but doesn't solve: ${currentTask?.description}`
-                : "But it doesn't solve the current challenge!"}
-            </div>
-            <button
-              onClick={onClose}
-              style={{ marginTop: 24 }}
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    setFailedModalState(prev => ({ ...prev, loading: false }));
   };
 
   return (
     <>
-      {showFailedModal && (
+      {failedModalState.show && (
         <FailedForgeModal
-          failTitle={failTitle}
-          failedObjectName={failedObjectName}
-          failedImageUrl={failedImageUrl}
-          failedLoading={failedLoading}
-          failedCapability={failedCapability}
+          failTitle={failedModalState.failTitle}
+          failedObjectName={failedModalState.objectName}
+          failedImageUrl={failedModalState.imageUrl}
+          failedLoading={failedModalState.loading}
+          failedCapability={failedModalState.capability}
           currentTask={currentTask}
           onClose={resetFailedModal}
           onImageLoad={handleFailedImageLoad}
           onImageError={handleFailedImageError}
         />
       )}
-      <div className="overlay" style={showFailedModal ? { display: 'none' } : {}}>
+      <div className="overlay" style={failedModalState.show ? { display: 'none' } : {}}>
         <div className="overlay-content overlay-center">
           <div className="overlay-card compact" style={{ textAlign: "center", maxWidth: 420 }}>
             <h2 className="overlay-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
