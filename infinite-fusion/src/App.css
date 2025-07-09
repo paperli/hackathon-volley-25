@@ -83,3 +83,37 @@
       0 0 48px #ffe066;
   }
 }
+
+.shine-title {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(90deg, #e0e0e0 0%, #ffffff 30%, #bfc7d1 50%, #e0e0e0 70%, #ffffff 100%);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: shine 3s linear infinite, glass-glow 6s ease-in-out infinite;
+  text-shadow:
+    0 0 8px #bfc7d1,
+    0 0 16px #fff,
+    0 0 32px #e0e0e0,
+    0 0 48px #bfc7d1;
+}
+
+@keyframes glass-glow {
+  0%, 30%, 100% {
+    text-shadow:
+      0 0 0px #bfc7d1,
+      0 0 0px #fff,
+      0 0 0px #e0e0e0,
+      0 0 0px #bfc7d1;
+  }
+  65% {
+    text-shadow:
+      0 0 8px #bfc7d1,
+      0 0 16px #fff,
+      0 0 32px #e0e0e0,
+      0 0 48px #bfc7d1;
+  }
+}

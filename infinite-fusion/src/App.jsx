@@ -47,8 +47,8 @@ function OverlayManager() {
   // Share handler
   const handleShare = () => {
     const shareText = fusedName
-      ? `I invented ${fusedName} in Infinite Fusion! The challenge: ${state.tasks[state.currentTaskIndex]?.description}`
-      : `I played Infinite Fusion! The challenge: ${state.tasks[state.currentTaskIndex]?.description}`;
+      ? `I invented ${fusedName} in Infinite Fusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`
+      : `I played Infinite Fusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`;
     if (navigator.share) {
       navigator.share({
         title: 'Infinite Fusion',
@@ -124,13 +124,21 @@ function OverlayManager() {
     else if (durationSec && durationSec < 40) speedBonus = 250;
     else if (durationSec && durationSec < 90) speedBonus = 100;
     const penalty = state.failedAttempts * 100;
+
+    // Title selection based on score
+    function getEndTitle(score) {
+      if (score >= 2500) return "Genius!";
+      if (score >= 1500) return "Amazing!";
+      if (score >= 800) return "Nice Work!";
+      return "Not Bad!";
+    }
     return (
       <div className="overlay">
         <div className="overlay-content overlay-center">
           <div className="overlay-card" style={{ textAlign: 'center', maxWidth: 420 }}>
             {lastTask && (
               <div>
-                <h1 style={{ margin: '0.2em 0', fontSize: '2.6em', color: '#FFC145' }}>Nice Work!</h1>
+                <h1 className="shine-title" style={{ margin: '0.2em 0', fontSize: '2.6em' }}>{getEndTitle(score)}</h1>
                 <div style={{ color: '#FFC145', fontWeight: 600, fontSize: '1.1em' }}>You invented:</div>
                 <div className="overlay-text" style={{ marginTop: 4, marginBottom: 12, fontWeight: 700, color: '#FFC145', fontSize: '1.3em' }}>
                   <b>{fusedName || "a new object"}</b>
