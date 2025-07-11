@@ -31,6 +31,7 @@ const PORT = process.env.PORT || 4000;
 //   allowedHeaders: ['Content-Type', 'Authorization'],
 //   credentials: true,
 // }));
+
 app.use(cors());
 app.options('*', cors());
 
