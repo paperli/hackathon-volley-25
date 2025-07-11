@@ -9,10 +9,14 @@ const PORT = process.env.PORT || 4000;
 // CORS configuration: allowed origins
 const allowedOrigins = [
   'http://localhost:5173',
-  `${process.env.FRONTEND_URL}`,
   'https://paperli.github.io/infinite-fusion/',
   'https://paperworkstud.io/infinite-fusion/',
 ];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (like mobile apps or curl requests)
@@ -23,7 +27,12 @@ app.use(cors({
     }
     return callback(null, true);
   },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
+
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' })); // Support large image payloads
 
