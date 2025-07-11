@@ -1,0 +1,41 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Or whatever your main branch is
+    paths:
+      - 'infinite-fusion/**' # Trigger only when changes are in the frontend folder
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24' # Or your preferred Node.js version
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: infinite-fusion # Run npm install in the infinite-fusion folder
+
+      - name: Build Vite project
+        run: npm run build
+        working-directory: infinite-fusion # Run npm build in the infinite-fusion folder
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./infinite-fusion/dist # The build output directory of Vite
+          # This needs to be your GitHub repository name.
+          # It's used to set the correct base path in vite.config.js if you used that approach.
+          # You might need to adjust this if your base name is different.
+          # For example, if your repo is 'my-game', then `base: '/my-game/'` in vite.config.js
+          # and this `external_repository` should be `your_github_username/my-game`.
+          external_repository: ${{ github.repository }} # Uses current repo for gh-pages
+          publish_branch: gh-pages # The branch to publish to

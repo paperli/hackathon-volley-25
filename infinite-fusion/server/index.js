@@ -6,7 +6,24 @@ const { OpenAI } = require('openai');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  `${process.env.FRONTEND_URL}`,
+  'https://paperli.github.io/infinite-fusion/',
+  'https://paperworkstud.io/infinite-fusion/',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  ));
+
 app.use(express.json({ limit: '10mb' })); // Support large image payloads
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

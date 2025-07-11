@@ -1,0 +1,23 @@
+name: Deploy Backend to Heroku
+
+on:
+  push:
+    branches:
+      - main # Or whatever your main branch is
+    paths:
+      - 'infinite-fusion/server/**' # Trigger only when changes are in the server folder
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.12.12 # Use a specific version for stability
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }} # Your Heroku app name
+          heroku_email: paper@gmail.com # Replace with your Heroku email
+          appdir: infinite-fusion/server # The directory where your Heroku app lives
