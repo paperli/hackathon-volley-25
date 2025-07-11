@@ -32,6 +32,7 @@ const PORT = process.env.PORT || 4000;
 //   credentials: true,
 // }));
 
+// CORS configuration: allow all origins
 app.use(cors());
 app.options('*', cors());
 
