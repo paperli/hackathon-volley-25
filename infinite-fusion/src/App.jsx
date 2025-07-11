@@ -6,6 +6,7 @@ import GameScreen from "./game/GameScreen";
 import GameRules from "./pages/GameRules";
 import RoomScanOverlay from "./components/RoomScanOverlay";
 import TaskOverlay from "./components/TaskOverlay";
+import { requestImageGeneration, pollForImage } from './utils/imageJob';
 
 function OverlayManager() {
   const { state, setGamePhase, setTasks, setStartTime, setEndTime, calculateScore } = useGame();
@@ -68,17 +69,17 @@ function OverlayManager() {
     if (state.gamePhase === 'end' && fusedName) {
       setFusedImageUrl("");
       setFusedImageLoading(true);
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ objectName: fusedName })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.imageUrl) setFusedImageUrl(data.imageUrl);
-        })
-        .catch(() => setFusedImageUrl(""))
-        .finally(() => setFusedImageLoading(false));
+      (async () => {
+        try {
+          const jobId = await requestImageGeneration(fusedName, import.meta.env.VITE_BACKEND_URL);
+          const imageUrl = await pollForImage(jobId, import.meta.env.VITE_BACKEND_URL);
+          setFusedImageUrl(imageUrl);
+        } catch {
+          setFusedImageUrl("");
+        } finally {
+          setFusedImageLoading(false);
+        }
+      })();
     }
   }, [state.gamePhase, fusedName]);
 

@@ -2,9 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { OpenAI } = require('openai');
+const Queue = require('bull');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Bull queue for image generation
+const imageQueue = new Queue('image-generation', process.env.REDIS_URL || process.env.REDISCLOUD_URL);
 
 // CORS configuration: allow all origins
 app.use(cors());
@@ -236,33 +240,29 @@ app.post('/generate-image', async (req, res) => {
   if (!objectName) {
     return res.status(400).json({ error: 'objectName is required' });
   }
-  const openaiApiKey = process.env.OPENAI_API_KEY;
-  if (!openaiApiKey) {
-    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  // Add job to queue
+  const job = await imageQueue.add({ objectName });
+  console.log(`[generate-image] Job enqueued: id=${job.id}, objectName=${objectName}`);
+  res.json({ jobId: job.id });
+});
+
+// GET /generate-image/:jobId - poll for job status/result
+app.get('/generate-image/:jobId', async (req, res) => {
+  const job = await imageQueue.getJob(req.params.jobId);
+  if (!job) {
+    console.log(`[generate-image] Job not found: id=${req.params.jobId}`);
+    return res.status(404).json({ error: 'Job not found' });
   }
-  try {
-    console.log(`[generate-image] Start generating image for: ${objectName}`);
-    // Use OpenAI gpt-image-1 for image generation
-    const response = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles.`,
-      n: 1,
-      size: '1024x1024',
-      background: 'transparent',
-    });
-    let imageUrl = response.data[0]?.url;
-    if (!imageUrl && response.data[0]?.b64_json) {
-      imageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
-    }
-    if (!imageUrl) {
-      console.log(`[generate-image] Done (error: no image URL) for: ${objectName}`);
-      return res.status(500).json({ error: 'No image URL returned from OpenAI.' });
-    }
-    console.log(`[generate-image] Done generating image for: ${objectName}`);
-    res.json({ imageUrl });
-  } catch (err) {
-    console.error('[generate-image] Error generating image for:', objectName, err);
-    res.status(500).json({ error: 'Failed to generate image' });
+
+  if (job.finishedOn) {
+    console.log(`[generate-image] Job done: id=${job.id}`);
+    res.json({ status: 'done', result: job.returnvalue });
+  } else if (job.failedReason) {
+    console.log(`[generate-image] Job failed: id=${job.id}, reason=${job.failedReason}`);
+    res.json({ status: 'failed', error: job.failedReason });
+  } else {
+    console.log(`[generate-image] Job pending: id=${job.id}`);
+    res.json({ status: 'pending' });
   }
 });
 
@@ -338,6 +338,35 @@ app.post('/generate-fusion-meta', async (req, res) => {
     console.error('OpenAI fusion meta generation error:', err);
     res.status(500).json({ error: 'Failed to generate fusion meta' });
   }
+});
+
+// Bull worker to process image generation jobs
+imageQueue.process(async (job) => {
+  const { objectName } = job.data;
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) throw new Error('OpenAI API key not configured');
+
+  console.log(`[generate-image] Job started: id=${job.id}, objectName=${objectName}`);
+  const openai = new OpenAI({ apiKey: openaiApiKey });
+  const response = await openai.images.generate({
+    model: 'gpt-image-1',
+    prompt: `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles.`,
+    n: 1,
+    size: '1024x1024',
+    background: 'transparent',
+  });
+  let imageUrl = response.data[0]?.url;
+  if (!imageUrl && response.data[0]?.b64_json) {
+    imageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
+  }
+  if (!imageUrl) throw new Error('No image URL returned from OpenAI.');
+  console.log(`[generate-image] Job completed: id=${job.id}, objectName=${objectName}`);
+  return { imageUrl };
+});
+
+// Bull error event logging
+imageQueue.on('failed', (job, err) => {
+  console.error(`[generate-image] Job failed event: id=${job.id}, error=${err}`);
 });
 
 app.listen(PORT, '0.0.0.0', () => {

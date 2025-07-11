@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useCameraStream } from "./CameraContext";
 import { useGame } from "../game/GameContext";
 import FailedForgeModal from './FailedForgeModal';
+import { requestImageGeneration, pollForImage } from '../utils/imageJob';
 
 const ANSWER_URL = `${import.meta.env.VITE_BACKEND_URL}/analyze-answer`;
 const TASK_GEN_URL = `${import.meta.env.VITE_BACKEND_URL}/generate-task`;
@@ -207,16 +208,12 @@ const TaskOverlay = () => {
         }));
         // Fetch image in parallel (after name/capability update)
         if (fusionName) {
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-image`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ objectName: fusionName }),
-          })
-            .then(res => res.json())
-            .then(imgData => {
+          requestImageGeneration(fusionName, import.meta.env.VITE_BACKEND_URL)
+            .then(jobId => pollForImage(jobId, import.meta.env.VITE_BACKEND_URL))
+            .then(imageUrl => {
               setFailedModalState(prev => ({
                 ...prev,
-                imageUrl: imgData.imageUrl || "",
+                imageUrl: imageUrl || "",
                 // loading stays true until image loads in <img>
               }));
             })
