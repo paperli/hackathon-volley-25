@@ -242,19 +242,26 @@ app.post('/generate-image', async (req, res) => {
   }
   // Add job to queue
   const job = await imageQueue.add({ objectName });
+  console.log(`[generate-image] Job enqueued: id=${job.id}, objectName=${objectName}`);
   res.json({ jobId: job.id });
 });
 
 // GET /generate-image/:jobId - poll for job status/result
 app.get('/generate-image/:jobId', async (req, res) => {
   const job = await imageQueue.getJob(req.params.jobId);
-  if (!job) return res.status(404).json({ error: 'Job not found' });
+  if (!job) {
+    console.log(`[generate-image] Job not found: id=${req.params.jobId}`);
+    return res.status(404).json({ error: 'Job not found' });
+  }
 
   if (job.finishedOn) {
+    console.log(`[generate-image] Job done: id=${job.id}`);
     res.json({ status: 'done', result: job.returnvalue });
   } else if (job.failedReason) {
+    console.log(`[generate-image] Job failed: id=${job.id}, reason=${job.failedReason}`);
     res.json({ status: 'failed', error: job.failedReason });
   } else {
+    console.log(`[generate-image] Job pending: id=${job.id}`);
     res.json({ status: 'pending' });
   }
 });
@@ -339,6 +346,7 @@ imageQueue.process(async (job) => {
   const openaiApiKey = process.env.OPENAI_API_KEY;
   if (!openaiApiKey) throw new Error('OpenAI API key not configured');
 
+  console.log(`[generate-image] Job started: id=${job.id}, objectName=${objectName}`);
   const openai = new OpenAI({ apiKey: openaiApiKey });
   const response = await openai.images.generate({
     model: 'gpt-image-1',
@@ -352,7 +360,13 @@ imageQueue.process(async (job) => {
     imageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
   }
   if (!imageUrl) throw new Error('No image URL returned from OpenAI.');
+  console.log(`[generate-image] Job completed: id=${job.id}, objectName=${objectName}`);
   return { imageUrl };
+});
+
+// Bull error event logging
+imageQueue.on('failed', (job, err) => {
+  console.error(`[generate-image] Job failed event: id=${job.id}, error=${err}`);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
