@@ -22,7 +22,8 @@ app.use(cors({
       return callback(new Error(msg), false);
     }
     return callback(null, true);
-  ));
+  },
+}));
 
 app.use(express.json({ limit: '10mb' })); // Support large image payloads
 
