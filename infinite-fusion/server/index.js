@@ -6,7 +6,7 @@ const { OpenAI } = require('openai');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// CORS configuration
+// CORS configuration: allowed origins
 const allowedOrigins = [
   'http://localhost:5173',
   `${process.env.FRONTEND_URL}`,
