@@ -44,6 +44,35 @@ function useDotDotDot(active = true, intervalMs = 400) {
   return '.'.repeat(dots);
 }
 
+// Utility to resize a dataUrl image to fit within a target box, preserving aspect ratio
+function resizeImage(dataUrl, maxWidth, maxHeight) {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      // Calculate new dimensions while preserving aspect ratio
+      let targetWidth = img.width;
+      let targetHeight = img.height;
+      const widthRatio = maxWidth / img.width;
+      const heightRatio = maxHeight / img.height;
+      const ratio = Math.min(widthRatio, heightRatio, 1); // Don't upscale
+      targetWidth = Math.round(img.width * ratio);
+      targetHeight = Math.round(img.height * ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
+      const ctx = canvas.getContext('2d');
+      // Fill with transparent background
+      ctx.clearRect(0, 0, maxWidth, maxHeight);
+      // Center the image
+      const x = Math.floor((maxWidth - targetWidth) / 2);
+      const y = Math.floor((maxHeight - targetHeight) / 2);
+      ctx.drawImage(img, x, y, targetWidth, targetHeight);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.src = dataUrl;
+  });
+}
+
 const TaskOverlay = () => {
   const { videoRef } = useCameraStream();
   const { state, setGamePhase, setEndTime, setStartTime, completeTask, setTasks, incrementFailedAttempts } = useGame();
@@ -132,12 +161,22 @@ const TaskOverlay = () => {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL("image/png");
+    // Log original dimensions
+    console.log(`[TaskOverlay] Original image: ${canvas.width}x${canvas.height}`);
+    // Resize before sending
     setAnalyzing(true);
     try {
+      const resizedDataUrl = await resizeImage(dataUrl, 512, 512);
+      // Log resized dimensions
+      const tmpImg = new window.Image();
+      tmpImg.onload = () => {
+        console.log(`[TaskOverlay] Resized image: ${tmpImg.width}x${tmpImg.height}`);
+      };
+      tmpImg.src = resizedDataUrl;
       const response = await fetch(ANSWER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: dataUrl, inventory: inventoryNames }),
+        body: JSON.stringify({ image: resizedDataUrl, inventory: inventoryNames }),
       });
       const result = await response.json();
       const detected = (result.objects || [])[0];
@@ -148,7 +187,7 @@ const TaskOverlay = () => {
       }
       setCaptures((prev) => {
         const next = [...prev];
-        next[activeIdx] = { image: dataUrl, object: detected };
+        next[activeIdx] = { image: resizedDataUrl, object: detected };
         return next;
       });
       setActiveIdx((idx) => (idx === 0 ? 1 : 0));
