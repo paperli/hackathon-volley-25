@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const GameRules = ({ onStart }) => {
-  // Use onStart prop if provided, otherwise fallback to navigation
+  // Use onStart prop if provided, otherwise, fallback to navigation
   const navigate = useNavigate();
   const handleStart = () => {
     if (onStart) onStart();
