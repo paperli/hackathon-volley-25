@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useGame } from "./GameContext";
+import { requestImageGeneration, pollForImage } from '../utils/imageJob';
 
 function GameScreen() {
   const { state, forgeObjects, completeTask, resetGame } = useGame();
@@ -37,23 +38,19 @@ function GameScreen() {
       setShowFailedModal(true);
       setFailedObject({ id: newObj.id, name: newObj.name });
       setFailedLoading(true);
-      // Fetch image and capability
+      // Fetch image and capability (job-based flow)
       try {
-        const [imgRes, capRes] = await Promise.all([
-          fetch(`${metaEnv.VITE_BACKEND_URL}/generate-image`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ objectName: newObj.name }),
-          }),
+        const [jobId, capRes] = await Promise.all([
+          requestImageGeneration(newObj.name, metaEnv.VITE_BACKEND_URL),
           fetch(`${metaEnv.VITE_BACKEND_URL}/generate-capability`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ objectName: newObj.name }),
           }),
         ]);
-        const imgData = await imgRes.json();
+        const imageUrl = await pollForImage(jobId, metaEnv.VITE_BACKEND_URL);
         const capData = await capRes.json();
-        setFailedImageUrl(imgData.imageUrl || "");
+        setFailedImageUrl(imageUrl || "");
         setFailedCapability(capData.capability || "");
       } catch {
         setFailedImageUrl("");
