@@ -23,16 +23,29 @@ function useDotDotDot(active = true, intervalMs = 400) {
   return '.'.repeat(dots);
 }
 
-// Utility to resize a dataUrl image to a target size
-function resizeImage(dataUrl, targetWidth, targetHeight) {
+// Utility to resize a dataUrl image to fit within a target box, preserving aspect ratio
+function resizeImage(dataUrl, maxWidth, maxHeight) {
   return new Promise((resolve) => {
     const img = new window.Image();
     img.onload = () => {
+      // Calculate new dimensions while preserving aspect ratio
+      let targetWidth = img.width;
+      let targetHeight = img.height;
+      const widthRatio = maxWidth / img.width;
+      const heightRatio = maxHeight / img.height;
+      const ratio = Math.min(widthRatio, heightRatio, 1); // Don't upscale
+      targetWidth = Math.round(img.width * ratio);
+      targetHeight = Math.round(img.height * ratio);
       const canvas = document.createElement('canvas');
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      // Fill with transparent background
+      ctx.clearRect(0, 0, maxWidth, maxHeight);
+      // Center the image
+      const offsetX = Math.floor((maxWidth - targetWidth) / 2);
+      const offsetY = Math.floor((maxHeight - targetHeight) / 2);
+      ctx.drawImage(img, offsetX, offsetY, targetWidth, targetHeight);
       resolve(canvas.toDataURL('image/png'));
     };
     img.src = dataUrl;
@@ -60,7 +73,7 @@ const RoomScanOverlay = ({ setFusedName }) => {
     // Log original dimensions
     console.log(`[RoomScanOverlay] Original capture: ${canvas.width}x${canvas.height}`);
     // Resize to 256x256 before saving
-    const resizedDataUrl = await resizeImage(dataUrl, 256, 256);
+    const resizedDataUrl = await resizeImage(dataUrl, 512, 512);
     // Log resized dimensions
     const tempImg = new window.Image();
     tempImg.onload = () => {
