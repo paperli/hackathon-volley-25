@@ -352,7 +352,7 @@ imageQueue.process(async (job) => {
     model: 'gpt-image-1',
     prompt: `A flat vector-style digital illustration of ${objectName}, drawn in a clean, emoji-like aesthetic. The object is rendered with smooth, solid colors, no outlines, and minimal soft shading to give a slight sense of depth. It features simple shapes, subtle highlights, and no texture or realism. The illustration is centered in the frame, uses a square format, and has a transparent background, ideal for UI icons or modern digital stickers. The color palette is soft and slightly muted, similar to Apple or Twemoji icon styles.`,
     n: 1,
-    size: '256x256', // reduced from 1024x1024
+    size: '1024x1024', // reduced from 1024x1024
     background: 'transparent',
   });
   let imageUrl = response.data[0]?.url;
