@@ -58,13 +58,13 @@ function OverlayManager() {
   // Share handler
   const handleShare = () => {
     const shareText = fusedName
-      ? `I invented ${fusedName} in Infinite Fusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`
-      : `I played Infinite Fusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`;
+      ? `I invented ${fusedName} in #InfiniteFusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`
+      : `I played #InfiniteFusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`;
     if (navigator.share) {
       navigator.share({
         title: 'Infinite Fusion',
         text: shareText,
-        url: window.location.origin
+        url: `${window.location.origin}${window.location.pathname}`
       }).catch(() => {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText);
