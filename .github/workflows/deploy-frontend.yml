@@ -30,7 +30,7 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_PAGES_TOKEN }}
           publish_dir: ./infinite-fusion/dist # The build output directory of Vite
           # This needs to be your GitHub repository name.
           # It's used to set the correct base path in vite.config.js if you used that approach.
