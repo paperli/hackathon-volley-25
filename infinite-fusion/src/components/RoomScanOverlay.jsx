@@ -23,6 +23,22 @@ function useDotDotDot(active = true, intervalMs = 400) {
   return '.'.repeat(dots);
 }
 
+// Utility to resize a dataUrl image to a target size
+function resizeImage(dataUrl, targetWidth, targetHeight) {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.src = dataUrl;
+  });
+}
+
 const RoomScanOverlay = ({ setFusedName }) => {
   const { videoRef } = useCameraStream();
   const { setRoomScanImages, setInventory, setGamePhase, setTasks } = useGame();
@@ -41,7 +57,17 @@ const RoomScanOverlay = ({ setFusedName }) => {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL("image/png");
-    setCaptures((prev) => [...prev, { image: dataUrl }]);
+    // Log original dimensions
+    console.log(`[RoomScanOverlay] Original capture: ${canvas.width}x${canvas.height}`);
+    // Resize to 256x256 before saving
+    const resizedDataUrl = await resizeImage(dataUrl, 256, 256);
+    // Log resized dimensions
+    const tempImg = new window.Image();
+    tempImg.onload = () => {
+      console.log(`[RoomScanOverlay] Resized capture: ${tempImg.width}x${tempImg.height}`);
+    };
+    tempImg.src = resizedDataUrl;
+    setCaptures((prev) => [...prev, { image: resizedDataUrl }]);
   };
 
   const handleRemoveCapture = (idx) => {
