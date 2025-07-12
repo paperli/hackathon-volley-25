@@ -38,7 +38,7 @@ function GameScreen() {
       setShowFailedModal(true);
       setFailedObject({ id: newObj.id, name: newObj.name });
       setFailedLoading(true);
-      // Fetch image and capability (job-based flow) - this is a hack to get the image and capability for the failed object
+      // Fetch image and capability (job-based flow)
       try {
         const [jobId, capRes] = await Promise.all([
           requestImageGeneration(newObj.name, metaEnv.VITE_BACKEND_URL),
