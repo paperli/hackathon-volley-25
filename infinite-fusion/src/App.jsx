@@ -58,15 +58,36 @@ function OverlayManager() {
   };
 
   // Share handler
-  const handleShare = () => {
+  const handleShare = async () => {
     const shareText = fusedName
       ? `I invented ${fusedName} in #InfiniteFusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`
       : `I played #InfiniteFusion! It solves: ${state.tasks[state.currentTaskIndex]?.description}`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+
+    if (navigator.canShare && fusedImageUrl) {
+      try {
+        const response = await fetch(fusedImageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `${fusedName || 'invention'}.png`, { type: blob.type });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Infinite Fusion',
+            text: shareText,
+            url: shareUrl,
+            files: [file]
+          });
+          return;
+        }
+      } catch (e) {
+        // fallback to text share below
+      }
+    }
+    // fallback: share text and url only
     if (navigator.share) {
       navigator.share({
         title: 'Infinite Fusion',
         text: shareText,
-        url: `${window.location.origin}${window.location.pathname}`
+        url: shareUrl
       }).catch(() => {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText);
