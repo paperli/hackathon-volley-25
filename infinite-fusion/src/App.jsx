@@ -1,5 +1,6 @@
+import ReactGA from "react-ga4";
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { GameProvider, useGame } from "./game/GameContext";
 import CameraBackground from "./components/CameraBackground";
 import GameScreen from "./game/GameScreen";
@@ -7,6 +8,15 @@ import GameRules from "./pages/GameRules";
 import RoomScanOverlay from "./components/RoomScanOverlay";
 import TaskOverlay from "./components/TaskOverlay";
 import { requestImageGeneration, pollForImage } from './utils/imageJob';
+
+ReactGA.initialize("G-2REY39T4EC");
+
+function usePageViews() {
+  const location = useLocation();
+  React.useEffect(() => {
+    ReactGA.send({ hitType: "pageview", page: location.pathname + location.search });
+  }, [location]);
+}
 
 function OverlayManager() {
   const { state, setGamePhase, setTasks, setStartTime, setEndTime, calculateScore } = useGame();
