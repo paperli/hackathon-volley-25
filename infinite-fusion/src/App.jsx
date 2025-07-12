@@ -31,6 +31,8 @@ function OverlayManager() {
   const handlePlayAgain = async () => {
     setLoading(true);
     setError("");
+    setFusedImageUrl("");
+    setFusedImageLoading(false);
     try {
       const objectNames = state.inventory.map(obj => obj.name);
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate-task`, {
