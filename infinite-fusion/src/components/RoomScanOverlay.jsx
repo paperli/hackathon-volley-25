@@ -55,12 +55,25 @@ const RoomScanOverlay = ({ setFusedName }) => {
     setAnalyzing(true);
     setError(null);
     try {
+      // Debug: Log image details before sending
+      console.log("[RoomScanOverlay] Sending images to analyze-scan:");
+      captures.forEach((c, idx) => {
+        if (c && c.image) {
+          console.log(`Image ${idx + 1}: length=${c.image.length}, first100='${c.image.slice(0, 100)}'`);
+        } else {
+          console.log(`Image ${idx + 1}: MISSING or INVALID`);
+        }
+      });
+      console.log(`[RoomScanOverlay] Total images: ${captures.length}`);
+
       const response = await fetch(SCAN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: captures.map((c) => c.image) }),
       });
       const result = await response.json();
+      // Debug: Log server response
+      console.log("[RoomScanOverlay] /analyze-scan response:", result);
       const allObjects = result.objects || [];
       setRoomScanImages(captures.map((c) => c.image));
       setInventory(allObjects);
@@ -80,13 +93,15 @@ const RoomScanOverlay = ({ setFusedName }) => {
           } else {
             setError(result.error || "Failed to generate task.");
           }
-        } catch {
+        } catch (err) {
+          console.error("[RoomScanOverlay] Error generating task:", err);
           setError("Failed to generate task.");
         }
       } else {
         setError("Not enough objects detected to generate a task.");
       }
-    } catch {
+    } catch (err) {
+      console.error("[RoomScanOverlay] Error analyzing images:", err);
       setError("Failed to analyze images.");
     } finally {
       setAnalyzing(false);

@@ -257,7 +257,7 @@ app.get('/generate-image/:jobId', async (req, res) => {
   if (!job) {
     console.log(`[generate-image] Job not found: id=${req.params.jobId}`);
     return res.status(404).json({ error: 'Job not found' });
-  }
+    }
 
   if (job.finishedOn) {
     console.log(`[generate-image] Job done: id=${job.id}`);
