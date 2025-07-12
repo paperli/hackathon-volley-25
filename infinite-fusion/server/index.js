@@ -146,7 +146,7 @@ app.post('/analyze-answer', async (req, res) => {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
   try {
-    const prompt = `You are an object recognition assistant for a scavenger hunt game.\nGiven an image and a list of inventory objects, your task is to:\n- Identify if any object from the inventory is present in the image. If so, return the name of that object.\n- If none of the inventory objects are present, return the name of the most prominent movable object in the image.\n- Return only one object name per image.\nInventory: ${JSON.stringify(inventory)}\nRespond with a JSON object: {\"name\": <object name>, \"confidence\": <score 0-1>}`;
+    const prompt = `You are an object recognition assistant for a scavenger hunt game.\nGiven an image and a list of inventory objects, your task is to:\n- Identify if any object from the inventory is present in the image. If so, return the name of that object.\n- If none of the inventory objects are present, return the name of the most prominent movable object in the image.\n- PRIORITIZE any object that is being held in a user's hand in the image. If an inventory object is being held, it should be selected first.\n- Return only one object name per image.\nInventory: ${JSON.stringify(inventory)}\nRespond with a JSON object: {\"name\": <object name>, \"confidence\": <score 0-1>}`;
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
