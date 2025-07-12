@@ -8,7 +8,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Bull queue for image generation
-const imageQueue = new Queue('image-generation', process.env.REDIS_URL || process.env.REDISCLOUD_URL);
+const redisUrl = process.env.REDIS_URL || process.env.REDISCLOUD_URL;
+const imageQueue = new Queue('image-generation', redisUrl, {
+  redis: {
+    tls: { rejectUnauthorized: false }
+  }
+});
 
 // CORS configuration: allow all origins
 app.use(cors());
